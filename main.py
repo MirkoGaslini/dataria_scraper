@@ -57,35 +57,69 @@ def create_twitter_client():
         return None
 
 def search_hashtag(api, hashtag, max_results=10):
-    """Cerca tweet per hashtag - versione con testo completo"""
+    """Cerca tweet per hashtag - versione con tutti i parametri"""
     try:
         print(f"\n🔍 Cercando #{hashtag}...")
         
-        # Ricerca con richiesta esplicita del testo completo
+        # Ricerca con TUTTI i parametri per forzare testo completo
         response = api.search_tweets(
-            query=f"#{hashtag}",
+            query=f"#{hashtag} -is:retweet",
             max_results=max_results,
-            tweet_fields=['text', 'created_at', 'author_id']  # Richiede campi specifici
+            tweet_fields=[
+                'id', 'text', 'created_at', 'author_id', 
+                'conversation_id', 'public_metrics', 'lang'
+            ],
+            expansions=['author_id'],
+            user_fields=['id', 'name', 'username']
         )
         
         if not response.data:
             print(f"❌ Nessun tweet trovato per #{hashtag}")
             return []
         
-        # Estrai solo i dati essenziali
+        # Estrai TUTTI i dati disponibili
         tweets = []
+        users_dict = {}
+        
+        # Processa utenti se disponibili
+        if hasattr(response, 'includes') and response.includes and response.includes.users:
+            for user in response.includes.users:
+                users_dict[user.id] = {
+                    'username': user.username,
+                    'name': user.name
+                }
+        
         for tweet in response.data:
+            author_info = users_dict.get(tweet.author_id, {})
+            
             tweet_data = {
                 'id': tweet.id,
-                'text': tweet.text,
+                'text': tweet.text,  # Dovrebbe essere completo ora
+                'text_length': len(tweet.text),  # Per debug
                 'created_at': str(tweet.created_at) if tweet.created_at else None,
                 'author_id': tweet.author_id,
-                'hashtag': hashtag
+                'author_username': author_info.get('username', 'unknown'),
+                'author_name': author_info.get('name', 'unknown'),
+                'hashtag': hashtag,
+                'lang': tweet.lang if hasattr(tweet, 'lang') else None
             }
             tweets.append(tweet_data)
         
         print(f"✅ Trovati {len(tweets)} tweet!")
         return tweets
+        
+    except Exception as e:
+        error_str = str(e)
+        print(f"❌ Errore ricerca: {e}")
+        
+        if "429" in error_str:
+            print("⚠️  Rate limit raggiunto - aspetta 15 minuti")
+        elif "401" in error_str:
+            print("🔑 Credenziali non valide")
+        elif "403" in error_str:
+            print("🚫 Accesso negato")
+        
+        return []
         
     except Exception as e:
         error_str = str(e)
