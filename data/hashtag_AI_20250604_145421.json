@@ -1,0 +1,473 @@
+{
+  "metadata": {
+    "search_type": "hashtag",
+    "search_term": "AI",
+    "collection_time": "2025-06-04T14:54:21.636586",
+    "total_videos": 10,
+    "script_version": "tiktok_scraper_v1.0",
+    "filters_applied": {
+      "content_filter_applied": true,
+      "min_desc_length": 10,
+      "min_duration": null,
+      "max_duration": null,
+      "min_views": null
+    },
+    "output_info": {
+      "directory": "data",
+      "prefix": "",
+      "filename": "data/hashtag_AI_20250604_145421.json"
+    },
+    "statistics": {
+      "total_duration_seconds": 275,
+      "average_duration": 27.5,
+      "total_views": 45189600,
+      "total_likes": 1301851,
+      "average_views": 4518960.0,
+      "top_hashtags": {
+        "ai": 5,
+        "aigenerated": 3,
+        "fyp": 3,
+        "artificialintelligence": 3,
+        "aivideo": 2,
+        "veo3": 2,
+        "Technology": 2,
+        "aiart": 2,
+        "aifilm": 1,
+        "midjourney": 1
+      },
+      "total_hashtags_found": 96
+    }
+  },
+  "videos": [
+    {
+      "id": "7511268853129809183",
+      "description": "‘Bible influencer’ videos went CRAZY VIRAL this weekend and pulled in millions of views. Here's my EXACT conversation with ChatGPT to make these Veo 3 prompts 👇🏼 My process for Veo 3 videos is VERY simple: 1. Basic Script with ChatGPT (or Gemini/Grok, etc.) 2. Expand to Shot list using my prompt structure 3. Paste into Veo 3 and choose favorites.  4. Edit in Final Cut/Capcut, etc.  Here’s the prompt: A cinematic handheld selfie-style video shot, showing a soggy, exhausted Middle Eastern man in his 30s with shoulder-length wet hair, a tangled beard, and shredded linen robes clinging to his frame. He’s seated awkwardly on a slick, uneven surface deep inside the belly of a massive sea creature. The fleshy, ribbed walls pulse slightly around him, dimly lit by a faint blue-green glow coming from slits in the whale’s tissue above. Water drips steadily in the background. He holds the camera close, his face lit softly by the glow, his expression weary and mildly guilty. He talks with a country accent.  He says: \"Update, still swallowed. I would like to formally apologize to God, the sailors, and this whale, sorry dude, I just took a poop over there.\" He glances offscreen and winces slightly, then gives the camera a sheepish shrug before shifting uncomfortably. Time of Day: indeterminate interior, faint bioluminescent glow from above Lens: natural wide framing, dim exposure optimized for low light and moisture POV: Selfie camera held close to face, angled upward slightly to capture Jonah and the ribbed organic chamber behind him Audio: (implied) dripping water, faint groaning of the whale’s body, distant liquid movement Background: wet, fleshy whale interior with ribbed walls and dim, humid atmosphere -- Full breakdown on X  #aivideo #veo3 #aifilm #midjourney #bible #Jesus #aibible #christianity",
+      "clean_description": "‘Bible influencer’ videos went CRAZY VIRAL this weekend and pulled in millions of views. Here's my EXACT conversation with ChatGPT to make these Veo 3 prompts 👇🏼 My process for Veo 3 videos is VERY simple: 1. Basic Script with ChatGPT (or Gemini/Grok, etc.) 2. Expand to Shot list using my prompt structure 3. Paste into Veo 3 and choose favorites. 4. Edit in Final Cut/Capcut, etc. Here’s the prompt: A cinematic handheld selfie-style video shot, showing a soggy, exhausted Middle Eastern man in his 30s with shoulder-length wet hair, a tangled beard, and shredded linen robes clinging to his frame. He’s seated awkwardly on a slick, uneven surface deep inside the belly of a massive sea creature. The fleshy, ribbed walls pulse slightly around him, dimly lit by a faint blue-green glow coming from slits in the whale’s tissue above. Water drips steadily in the background. He holds the camera close, his face lit softly by the glow, his expression weary and mildly guilty. He talks with a country accent. He says: \"Update, still swallowed. I would like to formally apologize to God, the sailors, and this whale, sorry dude, I just took a poop over there.\" He glances offscreen and winces slightly, then gives the camera a sheepish shrug before shifting uncomfortably. Time of Day: indeterminate interior, faint bioluminescent glow from above Lens: natural wide framing, dim exposure optimized for low light and moisture POV: Selfie camera held close to face, angled upward slightly to capture Jonah and the ribbed organic chamber behind him Audio: (implied) dripping water, faint groaning of the whale’s body, distant liquid movement Background: wet, fleshy whale interior with ribbed walls and dim, humid atmosphere -- Full breakdown on X",
+      "desc_length": 1741,
+      "original_desc_length": 1817,
+      "created_at": "2025-06-02T10:40:56",
+      "author_username": "pjacefilms",
+      "author_nickname": "PJ Ace",
+      "author_id": "6946166690452800518",
+      "duration": 64,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 2300000,
+        "likes": 248700,
+        "comments": 2631,
+        "shares": 140800
+      },
+      "music": {
+        "id": "7511268995824192287",
+        "title": "original sound",
+        "author": "PJ Ace"
+      },
+      "hashtags": [
+        "aivideo",
+        "veo3",
+        "aifilm",
+        "midjourney",
+        "bible",
+        "Jesus",
+        "aibible",
+        "christianity"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/oMQY7QD004iYZwG9A8iiAFBNCHAIQT8EIKfDqr/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=998&bt=499&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=OmY6PDc4Njk2ODg8O2RpOEBpM2pyN3Y5cjlwMzMzaTczNEAyYmI2YTIvXl8xLTIuLi8vYSNuNC0yMmRzMnJhLS1kMTJzcw%3D%3D&btag=e00090000&expire=1749214525&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=91cf19694cccf712fa7bffc3e24562dd&tk=tt_chain_token",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/obj/tos-useast8-p-0068-tx2/okBEMxHyIU4EVqPBh6eDfEoRKbAFEzWADCsoQg?lk3s=b59d6b55&x-expires=1749211200&x-signature=zNIvZgi39N6twW9ChkO7Mt4n37k%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7496625008454733111",
+      "description": "AI Fanmade Construction Workers #ai #aigenerated #joke #fanmade #construction ",
+      "clean_description": "AI Fanmade Construction Workers",
+      "desc_length": 31,
+      "original_desc_length": 78,
+      "created_at": "2025-04-23T23:33:56",
+      "author_username": "lord_of_the_ai",
+      "author_nickname": "90s",
+      "author_id": "7296905232654648326",
+      "duration": 15,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 9300000,
+        "likes": 197900,
+        "comments": 2434,
+        "shares": 15800
+      },
+      "music": {
+        "id": "6817373144974624769",
+        "title": "Working sound of construction site",
+        "author": "CanonCable"
+      },
+      "hashtags": [
+        "ai",
+        "aigenerated",
+        "joke",
+        "fanmade",
+        "construction"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/useast2a/tos-useast2a-pve-0068/oYauQJorwDAMXcDofVFrBRogIEZQvBcCIOfrJE/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2168&bt=1084&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=ODRmaTxkOjg8NzM4MzpoZUBpM3F2dW85cmZvMzMzNzczM0AxYC01MTMtX2MxMmEwY18uYSNubWRuMmQ0azFhLS1kMTZzcw%3D%3D&btag=e000b8000&expire=1749214476&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=7236e4d41b4e9cf3a66a95dde7dc2939&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/oUELEAJERJef0yAiXQAV8IACEAFowwD6LvKBFC?lk3s=b59d6b55&x-expires=1749211200&x-signature=T7ryo%2FiuyHxC2DK08CfP9g26v3E%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7510157657198578952",
+      "description": "what if a powerful earthquake struck marina bay sands — one of the most iconic landmarks in singapore? this cinematic ai simulation shows the rooftop skypark cracking and collapsing, hotel towers crumbling, and tourists fleeing in terror. glass shatters, debris rains down, and the luxury turns into chaos. 🎧 sound on — the quake feels real. like this kind of visual storytelling? subscribe for more epic ‘what if’ disaster simulations. ⚠️ not real — this is an ai-generated visual concept for educational and creative use only. 📍 location: marina bay sands, singapore #whatif #marinabaysands #earthquakesimulation #singaporedisaster #skyparkcollapse #aishorts #aidisaster #aigenerated #마리나베이샌즈 #지진시뮬레이션 #ai재난콘텐츠 #whatifseries",
+      "clean_description": "what if a powerful earthquake struck marina bay sands — one of the most iconic landmarks in singapore? this cinematic ai simulation shows the rooftop skypark cracking and collapsing, hotel towers crumbling, and tourists fleeing in terror. glass shatters, debris rains down, and the luxury turns into chaos. 🎧 sound on — the quake feels real. like this kind of visual storytelling? subscribe for more epic ‘what if’ disaster simulations. ⚠️ not real — this is an ai-generated visual concept for educational and creative use only. 📍 location: marina bay sands, singapore",
+      "desc_length": 568,
+      "original_desc_length": 726,
+      "created_at": "2025-05-30T10:47:25",
+      "author_username": "quakelab_official",
+      "author_nickname": "QuakeLab",
+      "author_id": "7500065305235309576",
+      "duration": 10,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 8700000,
+        "likes": 66500,
+        "comments": 3423,
+        "shares": 19300
+      },
+      "music": {
+        "id": "7510157678249773841",
+        "title": "오리지널 사운드 - QuakeLab",
+        "author": "QuakeLab"
+      },
+      "hashtags": [
+        "whatif",
+        "marinabaysands",
+        "earthquakesimulation",
+        "singaporedisaster",
+        "skyparkcollapse",
+        "aishorts",
+        "aidisaster",
+        "aigenerated",
+        "마리나베이샌즈",
+        "지진시뮬레이션",
+        "ai재난콘텐츠",
+        "whatifseries"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/o07K5AlaXUQTFEEoQOFfBBgbdcU1AqIZRCDfEa/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=4604&bt=2302&cs=0&ds=3&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=cnF8b2hsc2d3SkBwbmQxaDFwekApNWgzN2Q1ZGQ0N2g6MzRpOWcpb2RyZjhqcTN2ZzMzajc3eXljRl5Nc3FePmJKYSNgbV90YmJeYF81XzJgLWMyYzNfXl8uNS46Yy1xanJzM2wzay0tLTIxLS46&btag=e000b0000&expire=1749214471&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=dd2ec5b2498b3eee7161c5b8b22e9f58&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/oEIIFALcJEGWX8AADdAAeeIfQ5IvjRzDoAGucE?lk3s=b59d6b55&x-expires=1749211200&x-signature=ZXsk9%2F9oBv2z3C5wDvnJPkzywDY%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7506439329762282774",
+      "description": "Baby Tina Turner is performing  #baby #singing #ai #fyp #tinaturner #sweet ",
+      "clean_description": "Baby Tina Turner is performing",
+      "desc_length": 30,
+      "original_desc_length": 75,
+      "created_at": "2025-05-20T10:18:27",
+      "author_username": "factspitter007",
+      "author_nickname": "Fact spitter",
+      "author_id": "6835374080713212934",
+      "duration": 12,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 12900000,
+        "likes": 512400,
+        "comments": 14500,
+        "shares": 320500
+      },
+      "music": {
+        "id": "6705027588168878081",
+        "title": "What's Love Got to Do with It (2015 Remaster)",
+        "author": "Tina Turner"
+      },
+      "hashtags": [
+        "baby",
+        "singing",
+        "ai",
+        "fyp",
+        "tinaturner",
+        "sweet"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/no1a/tos-no1a-ve-0068c001-no/o0tDtzg4CEdmOCeoAbQbEOIsfpEAUBFkRD6RLF/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=3330&bt=1665&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=N2U4NDs0OTRpZzY5NTRkOkBpamtlcXc5cnU2MzMzbzczNUAzYi81YjRfNi0xYmI1Xi8uYSNhM2QwMmRjaGphLS1kMTFzcw%3D%3D&btag=e000b0000&expire=1749214473&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=5bac64d8c4e8e73dd36c94c0ac95d244&tk=tt_chain_token",
+      "cover_url": "https://p16-pu-sign-no.tiktokcdn-eu.com/obj/tos-no1a-p-0037-no/oYfCdDtkLBFFFe2QHQmK6HAriOpgaoG8DERYEZ?lk3s=b59d6b55&x-expires=1749211200&x-signature=cqyKgqKlHyREi0WSkNuD90AuAVA%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7511436170845310239",
+      "description": "The Egyptians don’t stand a chance!  #BibleReels #POV #Veo3 #AIVisuals #googleveo3 #BibleTok #future #ai #veo3 #fyp #viral #creatorsearchinsights #JesusVibes #trending #oldtestament #FaithTok #viralreels ",
+      "clean_description": "The Egyptians don’t stand a chance!",
+      "desc_length": 35,
+      "original_desc_length": 204,
+      "created_at": "2025-06-02T21:29:00",
+      "author_username": "aibiblehistory",
+      "author_nickname": "Bible AI",
+      "author_id": "7510634456086496286",
+      "duration": 8,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 577100,
+        "likes": 15300,
+        "comments": 514,
+        "shares": 3549
+      },
+      "music": {
+        "id": "7511436161236175646",
+        "title": "original sound",
+        "author": "Bible AI"
+      },
+      "hashtags": [
+        "BibleReels",
+        "POV",
+        "Veo3",
+        "AIVisuals",
+        "googleveo3",
+        "BibleTok",
+        "future",
+        "ai",
+        "veo3",
+        "fyp",
+        "viral",
+        "creatorsearchinsights",
+        "JesusVibes",
+        "trending",
+        "oldtestament",
+        "FaithTok",
+        "viralreels"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/o0zefADeY95QwFGJg79LsZURAQq7FROIDRpfEz/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1600&bt=800&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=cnF8b2hsc2d3SkBwbmQxaDFwekApZTY6NGU1ZTw8NzMzZTQzN2cpcG03eDhqeXB4ZzMzajc4eXljRl5Nc3FePmJKYSNgbV90YmJeYGEzMjVfNjI0MTBiMy0zYF46Yy1yZ25oM2wvcy0tLWMxLS46&btag=e000b0000&expire=1749214469&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=2edea1affbdc98a41ced6c164d1297e7&tk=tt_chain_token",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/tos-useast8-p-0068-tx2/oUeRGEYDA9iFJszFfpgGQCApQ77R3eQJfL8JVU~tplv-tiktokx-origin.image?dr=10395&x-expires=1749211200&x-signature=ArvxguoLuvJYQxDtoWvOPPpvyZY%3D&t=4d5b0474&ps=13740610&shp=b59d6b55&shcp=43f4a2f9&idc=no1a",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7492802608868920583",
+      "description": "Two years have passed since the original Will Smith eating spaghetti AI clip. The difference time has made, shows just how close realistic outputs are getting. #ai #artificialintelligence #ainews #Technology #Business #Alhistory #Alarchive #history #progress #willsmith #spaghetti @Will Smith  Source: https://x.com/minchoi/status/1911275924458270906 ニニニニニニニニニ A digital you. https://ctrlv.ai",
+      "clean_description": "Two years have passed since the original Will Smith eating spaghetti AI clip. The difference time has made, shows just how close realistic outputs are getting. @Will Smith Source: https://x.com/minchoi/status/1911275924458270906 ニニニニニニニニニ A digital you. https://ctrlv.ai",
+      "desc_length": 270,
+      "original_desc_length": 392,
+      "created_at": "2025-04-13T16:20:58",
+      "author_username": "ai_minute",
+      "author_nickname": "AI Minute",
+      "author_id": "7166817326243251202",
+      "duration": 32,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 1700000,
+        "likes": 28400,
+        "comments": 893,
+        "shares": 6754
+      },
+      "music": {
+        "id": "7492802635720903440",
+        "title": "original sound - AI Minute",
+        "author": "AI Minute"
+      },
+      "hashtags": [
+        "ai",
+        "artificialintelligence",
+        "ainews",
+        "Technology",
+        "Business",
+        "Alhistory",
+        "Alarchive",
+        "history",
+        "progress",
+        "willsmith",
+        "spaghetti"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/ok4CiDAi2Ip4DjQAHTIe2LEebzyWBfsCoFiP47/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1348&bt=674&cs=0&ds=3&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=ZGg6ZGY2NWQ3NWg6ODdlO0BpanA2eHI5cmV2eTMzODczNEAxNC9iMl8wNmIxNmI1LTZeYSNtYTQwMmRjX3FgLS1kMTFzcw%3D%3D&btag=e00088000&expire=1749214493&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=3f04e4feaa66c93a0874e93fb8972bc7&tk=tt_chain_token",
+      "cover_url": "https://p77-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/octI6AKBzByxFLdiiAAvQAEMCAH7PfjwoIIEDS?lk3s=b59d6b55&x-expires=1749211200&x-signature=mMZiLMC%2B2KN7SPu%2BBmSSVBSku2w%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7511192779502996744",
+      "description": "Bigfoot VLOG. Cooking steak over fire. #bigfoot #Vlog #cooking. (AI-generated content) ",
+      "clean_description": "Bigfoot VLOG. Cooking steak over fire. . (AI-generated content)",
+      "desc_length": 63,
+      "original_desc_length": 87,
+      "created_at": "2025-06-02T05:44:17",
+      "author_username": "aichezular9",
+      "author_nickname": "Bigfoot Cooks",
+      "author_id": "7508894295500440584",
+      "duration": 61,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 1200000,
+        "likes": 92600,
+        "comments": 1384,
+        "shares": 14400
+      },
+      "music": {
+        "id": "7511192816480045841",
+        "title": "original sound",
+        "author": "Bigfoot Cooks"
+      },
+      "hashtags": [
+        "bigfoot",
+        "Vlog",
+        "cooking"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/ocGZIgjFffoIRwLGNIEQwXAQrHAehp59okeIjG/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2290&bt=1145&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=OzUzaDRoPGloNmQ1MzhlNkBpajtxdXg5cjhrMzMzODczNEBjNV81NWFjXzExYl8xMTY2YSNkcjNjMmQ0bnJhLS1kMTFzcw%3D%3D&btag=e00090000&expire=1749214522&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=e27a455bb086df51d50851bf2af90750&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/o0EI9gfRnFjMwAGZ5rIAwLIGoHGVIeCtfehpgQ?lk3s=b59d6b55&x-expires=1749211200&x-signature=MSf9BcoLf503L7TcNuUvz1JTXuE%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7498014814292299015",
+      "description": "This Woman Is Not Real! In this short, AI-powered video, an energetic and cheerful young woman appears to be dancing in a warm setting. The model's movements and smile may have been analyzed or stylized by artificial intelligence algorithms, possibly synchronized with music. This fun clip explores the potential of AI technology in the realm of creative expression and visual presentation.#ArtificialIntelligence #AI #Dance #Fun #Model #Cheerful #Technology #Creativity #Visual #ShortVideo #aiart #aigenerated @eliza.taylor679 @wewillai @aidreamlab1 @womanwai @clearmind_arts @pixygen.ai @cutedream.ai @ai.video19_4k",
+      "clean_description": "This Woman Is Not Real! In this short, AI-powered video, an energetic and cheerful young woman appears to be dancing in a warm setting. The model's movements and smile may have been analyzed or stylized by artificial intelligence algorithms, possibly synchronized with music. This fun clip explores the potential of AI technology in the realm of creative expression and visual presentation.@eliza.taylor679 .ai @cutedream.ai @ai.video19_4k",
+      "desc_length": 439,
+      "original_desc_length": 617,
+      "created_at": "2025-04-27T17:26:58",
+      "author_username": "usefulinformationnnn",
+      "author_nickname": "usefulinformationnnn",
+      "author_id": "7450952930615755781",
+      "duration": 29,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 132000,
+        "likes": 816,
+        "comments": 119,
+        "shares": 86
+      },
+      "music": {
+        "id": "7498014864481323792",
+        "title": "original sound - usefulinformationnnn",
+        "author": "usefulinformationnnn"
+      },
+      "hashtags": [
+        "ArtificialIntelligence",
+        "AI",
+        "Dance",
+        "Fun",
+        "Model",
+        "Cheerful",
+        "Technology",
+        "Creativity",
+        "Visual",
+        "ShortVideo",
+        "aiart",
+        "aigenerated"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037/oE3ZjDpITDFkBPSfCg8OiUoMT0VpDAHDEEeBQ1/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1978&bt=989&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=OTk3aTNnN2RkMzQ2ZTY3NUBpanF0Zng5cm43MzMzODgzNEAwMTE1NTNeXi0xLTM1X2FhYSM2Z18zMmRraDRhLS1kLzFzcw%3D%3D&btag=e000b8000&expire=1749214490&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=ed7cdad7f33317a6920768b51c2d99dc&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/oATV8DE0eXZ9aOUnCipSSagEDfAXFBB3pBTokI?lk3s=b59d6b55&x-expires=1749211200&x-signature=QxDFbSSlNa9VOEeDyrhkS1af8nk%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7281122929545465093",
+      "description": "Calm Down Ai Anime  Ai marble dance  Based on video:  @Yoha Abrahantes  #calmdown #calmdownchallenge #artificialintelligence #inteligenciaartificial #calmdownrema #rema  #aivideo #edit #different #animeai #stilization #aitransform #transformation #stablediffusion #dancer #generativeart #generations #warmcolor #stablestyle #neuraledit #aiedit #fyp #animation #artificialintelligence #artifacts #anime #dancechallenge #aiartcommunity #teampunk",
+      "clean_description": "Calm Down Ai Anime Ai marble dance Based on video: @Yoha Abrahantes",
+      "desc_length": 67,
+      "original_desc_length": 443,
+      "created_at": "2023-09-21T05:55:42",
+      "author_username": "musicalart.ai",
+      "author_nickname": "MusicalArt AI Generated",
+      "author_id": "7238071294762370053",
+      "duration": 25,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 80500,
+        "likes": 935,
+        "comments": 108,
+        "shares": 176
+      },
+      "music": {
+        "id": "7060633760082511873",
+        "title": "Calm Down",
+        "author": "Rema"
+      },
+      "hashtags": [
+        "calmdown",
+        "calmdownchallenge",
+        "artificialintelligence",
+        "inteligenciaartificial",
+        "calmdownrema",
+        "rema",
+        "aivideo",
+        "edit",
+        "different",
+        "animeai",
+        "stilization",
+        "aitransform",
+        "transformation",
+        "stablediffusion",
+        "dancer",
+        "generativeart",
+        "generations",
+        "warmcolor",
+        "stablestyle",
+        "neuraledit",
+        "aiedit",
+        "fyp",
+        "animation",
+        "artificialintelligence",
+        "artifacts",
+        "anime",
+        "dancechallenge",
+        "aiartcommunity",
+        "teampunk"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/useast2a/tos-useast2a-pve-0068/ognLbJMzEB3C3IDCsbRvEXSBGyp47Q6eQ0AKel/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=6830&bt=3415&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=ZTU8ODhnZmRoNzM5MzlnNUBpM3R5Ojw6ZmZ1bjMzNzczM0A1YTUtLjQvNTUxMzVhXzZiYSNwY2phcjRvbTJgLS1kMTZzcw%3D%3D&btag=e000b8000&expire=1749214486&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=61487d76244bf73cf195b3f69030d036&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/6afe5c89214d4a419629691c5c536fbe_1695268547~tplv-dmt-logom:tos-useast2a-v-0068/owCWAveCIeAALE7AElDnTrbuIAzdQ6tmBJL8XR.image?lk3s=b59d6b55&x-expires=1749211200&x-signature=eGfiDeAh7A%2F6lDuRR8dHmpvhZ9I%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    },
+    {
+      "id": "7504420131963997458",
+      "description": "POV: When the World Reverses – The Farm of Humanity #pov #ai #aiart #mindbending #explore #cinematic #tiktokviral ",
+      "clean_description": "POV: When the World Reverses – The Farm of Humanity",
+      "desc_length": 51,
+      "original_desc_length": 114,
+      "created_at": "2025-05-14T23:42:57",
+      "author_username": "world.upside.down",
+      "author_nickname": "Ai Twist",
+      "author_id": "7501657788830778388",
+      "duration": 19,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 8300000,
+        "likes": 138300,
+        "comments": 1730,
+        "shares": 18900
+      },
+      "music": {
+        "id": "7283328443169146881",
+        "title": "Idea 10",
+        "author": "Clavier"
+      },
+      "hashtags": [
+        "pov",
+        "ai",
+        "aiart",
+        "mindbending",
+        "explore",
+        "cinematic",
+        "tiktokviral"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/oA178lciojIvEBm0AUQEIDsixfIESjCqAB0AwG/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1648&bt=824&cs=0&ds=6&ft=-Csk_mctPD12Nq_lZh-UxD.5hY3W3wv25AcAp&mime_type=video_mp4&qs=0&rc=cnF8b2hsc2d3SkBwbmQxaDFwekApNGVnNWYzOGU7NzllNGc8N2cpdGc6ZDhqeXZsZzMzajc3eXljRl5Nc3FePmJKYSNgbV90YmJeYGM2LjQ1NV80NjJhYzA0LTU6Yy1jYF9pM2xlZC0tLTIxLS46&btag=e000b8000&expire=1749214480&l=20250604125420B21FA040CABCA3063B42&ply_type=2&policy=2&signature=4757832fe51e128afe8089381ec6b15a&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/ooIlIDANID7EALB0UicQfvss0c1CjiIwqGomAX?lk3s=b59d6b55&x-expires=1749211200&x-signature=xIJE4oOQKJPYPkzOf7erGZaRplA%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10
+    }
+  ]
+}
