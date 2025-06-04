@@ -1,0 +1,279 @@
+{
+  "metadata": {
+    "search_type": "hashtag",
+    "search_term": "AI",
+    "collection_time": "2025-06-04T15:14:56.987281",
+    "total_videos": 5,
+    "script_version": "tiktok_scraper_v1.1_with_transcript",
+    "filters_applied": {
+      "content_filter_applied": true,
+      "min_desc_length": 10,
+      "min_duration": null,
+      "max_duration": null,
+      "min_views": null
+    },
+    "transcript_config": {
+      "transcript_enabled": false,
+      "transcript_language": "auto",
+      "videos_with_transcript": 0,
+      "transcript_success_rate": 0.0
+    },
+    "output_info": {
+      "directory": "data",
+      "prefix": "",
+      "filename": "data/hashtag_AI_20250604_151456.json"
+    },
+    "statistics": {
+      "total_duration_seconds": 148,
+      "average_duration": 29.6,
+      "total_views": 13228300,
+      "total_likes": 426476,
+      "average_views": 2645660.0,
+      "top_hashtags": {
+        "veo3": 2,
+        "ai": 2,
+        "aivideo": 1,
+        "aifilm": 1,
+        "midjourney": 1,
+        "bible": 1,
+        "Jesus": 1,
+        "aibible": 1,
+        "christianity": 1,
+        "BibleReels": 1
+      },
+      "total_hashtags_found": 46,
+      "total_transcript_characters": 0,
+      "average_transcript_length": 0
+    }
+  },
+  "videos": [
+    {
+      "id": "7511268853129809183",
+      "description": "‘Bible influencer’ videos went CRAZY VIRAL this weekend and pulled in millions of views. Here's my EXACT conversation with ChatGPT to make these Veo 3 prompts 👇🏼 My process for Veo 3 videos is VERY simple: 1. Basic Script with ChatGPT (or Gemini/Grok, etc.) 2. Expand to Shot list using my prompt structure 3. Paste into Veo 3 and choose favorites.  4. Edit in Final Cut/Capcut, etc.  Here’s the prompt: A cinematic handheld selfie-style video shot, showing a soggy, exhausted Middle Eastern man in his 30s with shoulder-length wet hair, a tangled beard, and shredded linen robes clinging to his frame. He’s seated awkwardly on a slick, uneven surface deep inside the belly of a massive sea creature. The fleshy, ribbed walls pulse slightly around him, dimly lit by a faint blue-green glow coming from slits in the whale’s tissue above. Water drips steadily in the background. He holds the camera close, his face lit softly by the glow, his expression weary and mildly guilty. He talks with a country accent.  He says: \"Update, still swallowed. I would like to formally apologize to God, the sailors, and this whale, sorry dude, I just took a poop over there.\" He glances offscreen and winces slightly, then gives the camera a sheepish shrug before shifting uncomfortably. Time of Day: indeterminate interior, faint bioluminescent glow from above Lens: natural wide framing, dim exposure optimized for low light and moisture POV: Selfie camera held close to face, angled upward slightly to capture Jonah and the ribbed organic chamber behind him Audio: (implied) dripping water, faint groaning of the whale’s body, distant liquid movement Background: wet, fleshy whale interior with ribbed walls and dim, humid atmosphere -- Full breakdown on X  #aivideo #veo3 #aifilm #midjourney #bible #Jesus #aibible #christianity",
+      "clean_description": "‘Bible influencer’ videos went CRAZY VIRAL this weekend and pulled in millions of views. Here's my EXACT conversation with ChatGPT to make these Veo 3 prompts 👇🏼 My process for Veo 3 videos is VERY simple: 1. Basic Script with ChatGPT (or Gemini/Grok, etc.) 2. Expand to Shot list using my prompt structure 3. Paste into Veo 3 and choose favorites. 4. Edit in Final Cut/Capcut, etc. Here’s the prompt: A cinematic handheld selfie-style video shot, showing a soggy, exhausted Middle Eastern man in his 30s with shoulder-length wet hair, a tangled beard, and shredded linen robes clinging to his frame. He’s seated awkwardly on a slick, uneven surface deep inside the belly of a massive sea creature. The fleshy, ribbed walls pulse slightly around him, dimly lit by a faint blue-green glow coming from slits in the whale’s tissue above. Water drips steadily in the background. He holds the camera close, his face lit softly by the glow, his expression weary and mildly guilty. He talks with a country accent. He says: \"Update, still swallowed. I would like to formally apologize to God, the sailors, and this whale, sorry dude, I just took a poop over there.\" He glances offscreen and winces slightly, then gives the camera a sheepish shrug before shifting uncomfortably. Time of Day: indeterminate interior, faint bioluminescent glow from above Lens: natural wide framing, dim exposure optimized for low light and moisture POV: Selfie camera held close to face, angled upward slightly to capture Jonah and the ribbed organic chamber behind him Audio: (implied) dripping water, faint groaning of the whale’s body, distant liquid movement Background: wet, fleshy whale interior with ribbed walls and dim, humid atmosphere -- Full breakdown on X",
+      "desc_length": 1741,
+      "original_desc_length": 1817,
+      "created_at": "2025-06-02T10:40:56",
+      "author_username": "pjacefilms",
+      "author_nickname": "PJ Ace",
+      "author_id": "6946166690452800518",
+      "duration": 64,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 2300000,
+        "likes": 249600,
+        "comments": 2641,
+        "shares": 141300
+      },
+      "music": {
+        "id": "7511268995824192287",
+        "title": "original sound",
+        "author": "PJ Ace"
+      },
+      "hashtags": [
+        "aivideo",
+        "veo3",
+        "aifilm",
+        "midjourney",
+        "bible",
+        "Jesus",
+        "aibible",
+        "christianity"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/oMQY7QD004iYZwG9A8iiAFBNCHAIQT8EIKfDqr/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=998&bt=499&cs=0&ds=6&ft=I~da4oAGD12Nvq~cmWIxRR0SYl-H-UjNSbopiX&mime_type=video_mp4&qs=0&rc=OmY6PDc4Njk2ODg8O2RpOEBpM2pyN3Y5cjlwMzMzaTczNEAyYmI2YTIvXl8xLTIuLi8vYSNuNC0yMmRzMnJhLS1kMTJzcw%3D%3D&btag=e00090000&expire=1749215760&l=2025060413145593143D5EB35B330968CF&ply_type=2&policy=2&signature=d1f24c3eccaae9151ab6efce630a314e&tk=tt_chain_token",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/obj/tos-useast8-p-0068-tx2/okBEMxHyIU4EVqPBh6eDfEoRKbAFEzWADCsoQg?lk3s=b59d6b55&x-expires=1749214800&x-signature=GFjLsfU4UxkrRHqNxXDzhNHqu%2Fw%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7511436170845310239",
+      "description": "The Egyptians don’t stand a chance!  #BibleReels #POV #Veo3 #AIVisuals #googleveo3 #BibleTok #future #ai #veo3 #fyp #viral #creatorsearchinsights #JesusVibes #trending #oldtestament #FaithTok #viralreels ",
+      "clean_description": "The Egyptians don’t stand a chance!",
+      "desc_length": 35,
+      "original_desc_length": 204,
+      "created_at": "2025-06-02T21:29:00",
+      "author_username": "aibiblehistory",
+      "author_nickname": "Bible AI",
+      "author_id": "7510634456086496286",
+      "duration": 8,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 615100,
+        "likes": 16600,
+        "comments": 529,
+        "shares": 3894
+      },
+      "music": {
+        "id": "7511436161236175646",
+        "title": "original sound",
+        "author": "Bible AI"
+      },
+      "hashtags": [
+        "BibleReels",
+        "POV",
+        "Veo3",
+        "AIVisuals",
+        "googleveo3",
+        "BibleTok",
+        "future",
+        "ai",
+        "veo3",
+        "fyp",
+        "viral",
+        "creatorsearchinsights",
+        "JesusVibes",
+        "trending",
+        "oldtestament",
+        "FaithTok",
+        "viralreels"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/o0zefADeY95QwFGJg79LsZURAQq7FROIDRpfEz/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1600&bt=800&cs=0&ds=6&ft=I~da4oAGD12Nvq~cmWIxRR0SYl-H-UjNSbopiX&mime_type=video_mp4&qs=0&rc=Zzk4O2U8ODo3Nmg5MzlmZEBpM3htdG45cjV5MzMzaTczNEBfMDQuXy9fNjYxLS1fLi0xYSNqZzFyMmRzanJhLS1kMTJzcw%3D%3D&btag=e000b0000&expire=1749215704&l=2025060413145593143D5EB35B330968CF&ply_type=2&policy=2&signature=c653f98948b074f9806e1f9eaa5c612f&tk=tt_chain_token",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/tos-useast8-p-0068-tx2/oUeRGEYDA9iFJszFfpgGQCApQ77R3eQJfL8JVU~tplv-tiktokx-origin.image?dr=10395&x-expires=1749214800&x-signature=3GSrlg4FFip1sKxM%2BCVRoIXwyB0%3D&t=4d5b0474&ps=13740610&shp=b59d6b55&shcp=43f4a2f9&idc=no1a",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7510157657198578952",
+      "description": "what if a powerful earthquake struck marina bay sands — one of the most iconic landmarks in singapore? this cinematic ai simulation shows the rooftop skypark cracking and collapsing, hotel towers crumbling, and tourists fleeing in terror. glass shatters, debris rains down, and the luxury turns into chaos. 🎧 sound on — the quake feels real. like this kind of visual storytelling? subscribe for more epic ‘what if’ disaster simulations. ⚠️ not real — this is an ai-generated visual concept for educational and creative use only. 📍 location: marina bay sands, singapore #whatif #marinabaysands #earthquakesimulation #singaporedisaster #skyparkcollapse #aishorts #aidisaster #aigenerated #마리나베이샌즈 #지진시뮬레이션 #ai재난콘텐츠 #whatifseries",
+      "clean_description": "what if a powerful earthquake struck marina bay sands — one of the most iconic landmarks in singapore? this cinematic ai simulation shows the rooftop skypark cracking and collapsing, hotel towers crumbling, and tourists fleeing in terror. glass shatters, debris rains down, and the luxury turns into chaos. 🎧 sound on — the quake feels real. like this kind of visual storytelling? subscribe for more epic ‘what if’ disaster simulations. ⚠️ not real — this is an ai-generated visual concept for educational and creative use only. 📍 location: marina bay sands, singapore",
+      "desc_length": 568,
+      "original_desc_length": 726,
+      "created_at": "2025-05-30T10:47:25",
+      "author_username": "quakelab_official",
+      "author_nickname": "QuakeLab",
+      "author_id": "7500065305235309576",
+      "duration": 10,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 8700000,
+        "likes": 66500,
+        "comments": 3425,
+        "shares": 19300
+      },
+      "music": {
+        "id": "7510157678249773841",
+        "title": "오리지널 사운드 - QuakeLab",
+        "author": "QuakeLab"
+      },
+      "hashtags": [
+        "whatif",
+        "marinabaysands",
+        "earthquakesimulation",
+        "singaporedisaster",
+        "skyparkcollapse",
+        "aishorts",
+        "aidisaster",
+        "aigenerated",
+        "마리나베이샌즈",
+        "지진시뮬레이션",
+        "ai재난콘텐츠",
+        "whatifseries"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/o07K5AlaXUQTFEEoQOFfBBgbdcU1AqIZRCDfEa/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=4604&bt=2302&cs=0&ds=3&ft=I~da4oAGD12Nvq~cmWIxRR0SYl-H-UjNSbopiX&mime_type=video_mp4&qs=0&rc=cnF8b2hsc2d3SkBwbmQxaDFwekApNWgzN2Q1ZGQ0N2g6MzRpOWcpb2RyZjhqcTN2ZzMzajc3eXljRl5Nc3FePmJKYSNgbV90YmJeYF81XzJgLWMyYzNfXl8uNS46Yy1xanJzM2wzay0tLTIxLS46&btag=e000b0000&expire=1749215706&l=2025060413145593143D5EB35B330968CF&ply_type=2&policy=2&signature=05f0d3a4a8823c42d585d4c197b16461&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/oEIIFALcJEGWX8AADdAAeeIfQ5IvjRzDoAGucE?lk3s=b59d6b55&x-expires=1749214800&x-signature=u9ofM9axMURkMw3KjcYiMyUjAh4%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7507192901047242014",
+      "description": "Nàng tiên cá không cần đôi chân, chỉ cần một ánh nhìn là khiến cả thế giới phải bước theo. #misschinaai #xeleb #skincare #beautytips #aiagent #beauty #beautyAI #ai ",
+      "clean_description": "Nàng tiên cá không cần đôi chân, chỉ cần một ánh nhìn là khiến cả thế giới phải bước theo.",
+      "desc_length": 90,
+      "original_desc_length": 164,
+      "created_at": "2025-05-22T11:02:51",
+      "author_username": "scantobeauty",
+      "author_nickname": "Scan to Beauty",
+      "author_id": "7129453187186197550",
+      "duration": 5,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 413200,
+        "likes": 876,
+        "comments": 310,
+        "shares": 250
+      },
+      "music": {
+        "id": "7500687135617697809",
+        "title": "Messy (From F1® The Movie)",
+        "author": "ROSÉ"
+      },
+      "hashtags": [
+        "misschinaai",
+        "xeleb",
+        "skincare",
+        "beautytips",
+        "aiagent",
+        "beauty",
+        "beautyAI",
+        "ai"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/owbuRuekoIVBEqEw6BLFZUcEEqDQmCAgxAfqEg/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&br=5246&bt=2623&cs=0&ds=6&ft=I~da4oAGD12Nvq~cmWIxRR0SYl-H-UjNSbopiX&mime_type=video_mp4&qs=0&rc=aWZnZWQ3NDVoOjk4NDZlN0BpM2dvbnI5cmZoMzMzaTczNEA0NDMuYl9eNTExNDAuXmMwYSNzLS82MmRjYmthLS1kMTJzcw%3D%3D&btag=e000b0000&expire=1749215701&l=2025060413145593143D5EB35B330968CF&ply_type=2&policy=2&signature=f861ee8f8f2f7ef568ff11384cfde5d0&tk=tt_chain_token",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/tos-useast8-p-0068-tx2/oYAHEEDoVExD0RiIceufBF6LADp0muIwbigqgA~tplv-tiktokx-origin.image?dr=10395&x-expires=1749214800&x-signature=zddpZmxeE94sZG2j4cahzrSimJA%3D&t=4d5b0474&ps=13740610&shp=b59d6b55&shcp=43f4a2f9&idc=no1a",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7511192779502996744",
+      "description": "Bigfoot VLOG. Cooking steak over fire. #bigfoot #Vlog #cooking. (AI-generated content) ",
+      "clean_description": "Bigfoot VLOG. Cooking steak over fire. . (AI-generated content)",
+      "desc_length": 63,
+      "original_desc_length": 87,
+      "created_at": "2025-06-02T05:44:17",
+      "author_username": "aichezular9",
+      "author_nickname": "Bigfoot Cooks",
+      "author_id": "7508894295500440584",
+      "duration": 61,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 1200000,
+        "likes": 92900,
+        "comments": 1387,
+        "shares": 14400
+      },
+      "music": {
+        "id": "7511192816480045841",
+        "title": "original sound",
+        "author": "Bigfoot Cooks"
+      },
+      "hashtags": [
+        "bigfoot",
+        "Vlog",
+        "cooking"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/ocGZIgjFffoIRwLGNIEQwXAQrHAehp59okeIjG/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2290&bt=1145&cs=0&ds=6&ft=I~da4oAGD12Nvq~cmWIxRR0SYl-H-UjNSbopiX&mime_type=video_mp4&qs=0&rc=OzUzaDRoPGloNmQ1MzhlNkBpajtxdXg5cjhrMzMzODczNEBjNV81NWFjXzExYl8xMTY2YSNkcjNjMmQ0bnJhLS1kMTFzcw%3D%3D&btag=e00090000&expire=1749215757&l=2025060413145593143D5EB35B330968CF&ply_type=2&policy=2&signature=83ca9f118340664a19982bbf7d9564b6&tk=tt_chain_token",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/o0EI9gfRnFjMwAGZ5rIAwLIGoHGVIeCtfehpgQ?lk3s=b59d6b55&x-expires=1749214800&x-signature=%2BYiVEFrfc2B2n52W3t7qvhtx7DI%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    }
+  ]
+}

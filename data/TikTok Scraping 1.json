@@ -1,0 +1,301 @@
+{
+  "metadata": {
+    "search_type": "hashtag",
+    "search_term": "AI",
+    "collection_time": "2025-06-04T15:47:04.819884",
+    "total_videos": 5,
+    "script_version": "tiktok_scraper_v1.1_with_transcript",
+    "filters_applied": {
+      "content_filter_applied": true,
+      "min_desc_length": 10,
+      "min_duration": null,
+      "max_duration": null,
+      "min_views": null
+    },
+    "transcript_config": {
+      "transcript_enabled": true,
+      "transcript_language": "auto",
+      "videos_with_transcript": 2,
+      "transcript_success_rate": 40.0
+    },
+    "output_info": {
+      "directory": "data",
+      "prefix": "",
+      "filename": "data/hashtag_AI_20250604_154704.json"
+    },
+    "statistics": {
+      "total_duration_seconds": 107,
+      "average_duration": 21.4,
+      "total_views": 21548300,
+      "total_likes": 542898,
+      "average_views": 4309660.0,
+      "top_hashtags": {
+        "ai": 3,
+        "veo3": 2,
+        "aigenerated": 2,
+        "fyp": 2,
+        "aivideo": 1,
+        "aifilm": 1,
+        "midjourney": 1,
+        "bible": 1,
+        "Jesus": 1,
+        "aibible": 1
+      },
+      "total_hashtags_found": 46,
+      "total_transcript_characters": 1054,
+      "average_transcript_length": 527.0
+    }
+  },
+  "videos": [
+    {
+      "id": "7511268853129809183",
+      "description": "‘Bible influencer’ videos went CRAZY VIRAL this weekend and pulled in millions of views. Here's my EXACT conversation with ChatGPT to make these Veo 3 prompts 👇🏼 My process for Veo 3 videos is VERY simple: 1. Basic Script with ChatGPT (or Gemini/Grok, etc.) 2. Expand to Shot list using my prompt structure 3. Paste into Veo 3 and choose favorites.  4. Edit in Final Cut/Capcut, etc.  Here’s the prompt: A cinematic handheld selfie-style video shot, showing a soggy, exhausted Middle Eastern man in his 30s with shoulder-length wet hair, a tangled beard, and shredded linen robes clinging to his frame. He’s seated awkwardly on a slick, uneven surface deep inside the belly of a massive sea creature. The fleshy, ribbed walls pulse slightly around him, dimly lit by a faint blue-green glow coming from slits in the whale’s tissue above. Water drips steadily in the background. He holds the camera close, his face lit softly by the glow, his expression weary and mildly guilty. He talks with a country accent.  He says: \"Update, still swallowed. I would like to formally apologize to God, the sailors, and this whale, sorry dude, I just took a poop over there.\" He glances offscreen and winces slightly, then gives the camera a sheepish shrug before shifting uncomfortably. Time of Day: indeterminate interior, faint bioluminescent glow from above Lens: natural wide framing, dim exposure optimized for low light and moisture POV: Selfie camera held close to face, angled upward slightly to capture Jonah and the ribbed organic chamber behind him Audio: (implied) dripping water, faint groaning of the whale’s body, distant liquid movement Background: wet, fleshy whale interior with ribbed walls and dim, humid atmosphere -- Full breakdown on X  #aivideo #veo3 #aifilm #midjourney #bible #Jesus #aibible #christianity",
+      "clean_description": "‘Bible influencer’ videos went CRAZY VIRAL this weekend and pulled in millions of views. Here's my EXACT conversation with ChatGPT to make these Veo 3 prompts 👇🏼 My process for Veo 3 videos is VERY simple: 1. Basic Script with ChatGPT (or Gemini/Grok, etc.) 2. Expand to Shot list using my prompt structure 3. Paste into Veo 3 and choose favorites. 4. Edit in Final Cut/Capcut, etc. Here’s the prompt: A cinematic handheld selfie-style video shot, showing a soggy, exhausted Middle Eastern man in his 30s with shoulder-length wet hair, a tangled beard, and shredded linen robes clinging to his frame. He’s seated awkwardly on a slick, uneven surface deep inside the belly of a massive sea creature. The fleshy, ribbed walls pulse slightly around him, dimly lit by a faint blue-green glow coming from slits in the whale’s tissue above. Water drips steadily in the background. He holds the camera close, his face lit softly by the glow, his expression weary and mildly guilty. He talks with a country accent. He says: \"Update, still swallowed. I would like to formally apologize to God, the sailors, and this whale, sorry dude, I just took a poop over there.\" He glances offscreen and winces slightly, then gives the camera a sheepish shrug before shifting uncomfortably. Time of Day: indeterminate interior, faint bioluminescent glow from above Lens: natural wide framing, dim exposure optimized for low light and moisture POV: Selfie camera held close to face, angled upward slightly to capture Jonah and the ribbed organic chamber behind him Audio: (implied) dripping water, faint groaning of the whale’s body, distant liquid movement Background: wet, fleshy whale interior with ribbed walls and dim, humid atmosphere -- Full breakdown on X",
+      "desc_length": 1741,
+      "original_desc_length": 1817,
+      "created_at": "2025-06-02T10:40:56",
+      "author_username": "pjacefilms",
+      "author_nickname": "PJ Ace",
+      "author_id": "6946166690452800518",
+      "duration": 64,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 2300000,
+        "likes": 250900,
+        "comments": 2657,
+        "shares": 142000
+      },
+      "music": {
+        "id": "7511268995824192287",
+        "title": "original sound",
+        "author": "PJ Ace"
+      },
+      "hashtags": [
+        "aivideo",
+        "veo3",
+        "aifilm",
+        "midjourney",
+        "bible",
+        "Jesus",
+        "aibible",
+        "christianity"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/oMQY7QD004iYZwG9A8iiAFBNCHAIQT8EIKfDqr/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=998&bt=499&cs=0&ds=6&ft=I~da4oAGD12NvY9cmWIxRMFSWl-H-UjNSmopiX&mime_type=video_mp4&qs=0&rc=OmY6PDc4Njk2ODg8O2RpOEBpM2pyN3Y5cjlwMzMzaTczNEAyYmI2YTIvXl8xLTIuLi8vYSNuNC0yMmRzMnJhLS1kMTJzcw%3D%3D&btag=e00090000&expire=1749217668&l=20250604214644EB99314F83B69B031C16&ply_type=2&policy=2&signature=e23354b294af2d653efa803dc28c6741&tk=tt_chain_token",
+      "tiktok_url": "https://www.tiktok.com/@pjacefilms/video/7511268853129809183",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/obj/tos-useast8-p-0068-tx2/okBEMxHyIU4EVqPBh6eDfEoRKbAFEzWADCsoQg?lk3s=b59d6b55&x-expires=1749214800&x-signature=GFjLsfU4UxkrRHqNxXDzhNHqu%2Fw%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": {
+        "text": "Yo, fam, they don't know that G O D. Is about to B R B. These Philistines thought they could flex on me. Big mistake. I just took some pre workout and finna bring the house down. What's good, fam? Your boy David here about to eat this little stone at Goliath and see what happens. Okay, so I told y'all to trust the process, but no, y'all wanted to stay in Egypt stacking bricks. Yo, it's Shadrack. This random dude just showed up. It's getting lit in here. I got the horses in the back. Horse tack is attached. Hat is matte black. Got the boots that's black to match. Day two in the tomb. No Wi-Fi, no snacks. Just kind of waiting for god to respond. Me, you know, I'm a daddy's boy. He's got me in this Technicolor drip. Uh, brother, so jelly right now. They're looking a little sus. I'm supposed to say that god got me pregnant? Yeah. There's no way my parents are buying this story. I would like to formally apologize to god, the sailors, and this whale. Sorry, dude. I just took a poop over there.",
+        "language": "auto",
+        "source": "rapidapi_tiktok_transcript",
+        "available_languages": [],
+        "confidence": null,
+        "duration": null
+      },
+      "transcript_available": true,
+      "transcript_text": "Yo, fam, they don't know that G O D. Is about to B R B. These Philistines thought they could flex on me. Big mistake. I just took some pre workout and finna bring the house down. What's good, fam? Your boy David here about to eat this little stone at Goliath and see what happens. Okay, so I told y'all to trust the process, but no, y'all wanted to stay in Egypt stacking bricks. Yo, it's Shadrack. This random dude just showed up. It's getting lit in here. I got the horses in the back. Horse tack is attached. Hat is matte black. Got the boots that's black to match. Day two in the tomb. No Wi-Fi, no snacks. Just kind of waiting for god to respond. Me, you know, I'm a daddy's boy. He's got me in this Technicolor drip. Uh, brother, so jelly right now. They're looking a little sus. I'm supposed to say that god got me pregnant? Yeah. There's no way my parents are buying this story. I would like to formally apologize to god, the sailors, and this whale. Sorry, dude. I just took a poop over there.",
+      "transcript_language": "auto"
+    },
+    {
+      "id": "7496625008454733111",
+      "description": "AI Fanmade Construction Workers #ai #aigenerated #joke #fanmade #construction ",
+      "clean_description": "AI Fanmade Construction Workers",
+      "desc_length": 31,
+      "original_desc_length": 78,
+      "created_at": "2025-04-23T23:33:56",
+      "author_username": "lord_of_the_ai",
+      "author_nickname": "90s",
+      "author_id": "7296905232654648326",
+      "duration": 15,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 9300000,
+        "likes": 198100,
+        "comments": 2436,
+        "shares": 15800
+      },
+      "music": {
+        "id": "6817373144974624769",
+        "title": "Working sound of construction site",
+        "author": "CanonCable"
+      },
+      "hashtags": [
+        "ai",
+        "aigenerated",
+        "joke",
+        "fanmade",
+        "construction"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/useast2a/tos-useast2a-pve-0068/oYauQJorwDAMXcDofVFrBRogIEZQvBcCIOfrJE/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=2168&bt=1084&cs=0&ds=6&ft=I~da4oAGD12NvY9cmWIxRMFSWl-H-UjNSmopiX&mime_type=video_mp4&qs=0&rc=ODRmaTxkOjg8NzM4MzpoZUBpM3F2dW85cmZvMzMzNzczM0AxYC01MTMtX2MxMmEwY18uYSNubWRuMmQ0azFhLS1kMTZzcw%3D%3D&btag=e000b8000&expire=1749217619&l=20250604214644EB99314F83B69B031C16&ply_type=2&policy=2&signature=da9524f628ea128daf8c12f64c1b443d&tk=tt_chain_token",
+      "tiktok_url": "https://www.tiktok.com/@lord_of_the_ai/video/7496625008454733111",
+      "cover_url": "https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/oUELEAJERJef0yAiXQAV8IACEAFowwD6LvKBFC?lk3s=b59d6b55&x-expires=1749214800&x-signature=iake52ORM%2Bk3%2BNRRBmnta6l1oR8%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7510157657198578952",
+      "description": "what if a powerful earthquake struck marina bay sands — one of the most iconic landmarks in singapore? this cinematic ai simulation shows the rooftop skypark cracking and collapsing, hotel towers crumbling, and tourists fleeing in terror. glass shatters, debris rains down, and the luxury turns into chaos. 🎧 sound on — the quake feels real. like this kind of visual storytelling? subscribe for more epic ‘what if’ disaster simulations. ⚠️ not real — this is an ai-generated visual concept for educational and creative use only. 📍 location: marina bay sands, singapore #whatif #marinabaysands #earthquakesimulation #singaporedisaster #skyparkcollapse #aishorts #aidisaster #aigenerated #마리나베이샌즈 #지진시뮬레이션 #ai재난콘텐츠 #whatifseries",
+      "clean_description": "what if a powerful earthquake struck marina bay sands — one of the most iconic landmarks in singapore? this cinematic ai simulation shows the rooftop skypark cracking and collapsing, hotel towers crumbling, and tourists fleeing in terror. glass shatters, debris rains down, and the luxury turns into chaos. 🎧 sound on — the quake feels real. like this kind of visual storytelling? subscribe for more epic ‘what if’ disaster simulations. ⚠️ not real — this is an ai-generated visual concept for educational and creative use only. 📍 location: marina bay sands, singapore",
+      "desc_length": 568,
+      "original_desc_length": 726,
+      "created_at": "2025-05-30T10:47:25",
+      "author_username": "quakelab_official",
+      "author_nickname": "QuakeLab",
+      "author_id": "7500065305235309576",
+      "duration": 10,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 8700000,
+        "likes": 66500,
+        "comments": 3425,
+        "shares": 19300
+      },
+      "music": {
+        "id": "7510157678249773841",
+        "title": "오리지널 사운드 - QuakeLab",
+        "author": "QuakeLab"
+      },
+      "hashtags": [
+        "whatif",
+        "marinabaysands",
+        "earthquakesimulation",
+        "singaporedisaster",
+        "skyparkcollapse",
+        "aishorts",
+        "aidisaster",
+        "aigenerated",
+        "마리나베이샌즈",
+        "지진시뮬레이션",
+        "ai재난콘텐츠",
+        "whatifseries"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/o07K5AlaXUQTFEEoQOFfBBgbdcU1AqIZRCDfEa/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=4604&bt=2302&cs=0&ds=3&ft=I~da4oAGD12NvY9cmWIxRMFSWl-H-UjNSmopiX&mime_type=video_mp4&qs=0&rc=ZTtlOGYzaThpOWVkZTQ7NEBpM3dweHk5cjlxMzMzODczNEAvYi0xXi9eXi4xYjQtLmMzYSNpXmxgMmRrLXBhLS1kMTFzcw%3D%3D&btag=e000b0000&expire=1749217614&l=20250604214644EB99314F83B69B031C16&ply_type=2&policy=2&signature=f57a50fa67f8c94dd7e867fc459ec459&tk=tt_chain_token",
+      "tiktok_url": "https://www.tiktok.com/@quakelab_official/video/7510157657198578952",
+      "cover_url": "https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/oEIIFALcJEGWX8AADdAAeeIfQ5IvjRzDoAGucE?lk3s=b59d6b55&x-expires=1749214800&x-signature=u9ofM9axMURkMw3KjcYiMyUjAh4%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7473539853326568726",
+      "description": "Sabrina Carpenter X Venom #sabrinacarpenter #espresso #venom #marvelstudios #fusion #transformation #ai #aiart #fyp ",
+      "clean_description": "Sabrina Carpenter X Venom",
+      "desc_length": 25,
+      "original_desc_length": 116,
+      "created_at": "2025-02-20T17:31:39",
+      "author_username": "no_limit_ai",
+      "author_nickname": "NoLimitAI",
+      "author_id": "7470123290695894038",
+      "duration": 10,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 569200,
+        "likes": 8398,
+        "comments": 78,
+        "shares": 378
+      },
+      "music": {
+        "id": "6756879114637934600",
+        "title": "Ready",
+        "author": "Official Sound Studio"
+      },
+      "hashtags": [
+        "sabrinacarpenter",
+        "espresso",
+        "venom",
+        "marvelstudios",
+        "fusion",
+        "transformation",
+        "ai",
+        "aiart",
+        "fyp"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/no1a/tos-no1a-ve-0068c001-no/ok2YkFDzVCFu5ELTN3EIyLBAYQfgt9CRtnfGwK/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=3412&bt=1706&cs=0&ds=6&ft=I~da4oAGD12NvY9cmWIxRMFSWl-H-UjNSmopiX&mime_type=video_mp4&qs=0&rc=PDg5NDk3ZzlpNzQ5ZmQ3NkBpM2o2OXg5cm5weDMzbzgzNUBfYC42MS1fNjIxMTJeLWExYSMwczZqMmRzMm9gLS1kLzFzcw%3D%3D&btag=e000b0000&expire=1749217614&l=20250604214644EB99314F83B69B031C16&ply_type=2&policy=2&signature=8056c658dc6f82bd2045a0557b719234&tk=tt_chain_token",
+      "tiktok_url": "https://www.tiktok.com/@no_limit_ai/video/7473539853326568726",
+      "cover_url": "https://p16-pu-sign-no.tiktokcdn-eu.com/obj/tos-no1a-p-0037-no/osjtDfsnEEIkQcsqIAngFCcuIYR1AAzEFFfAUy?lk3s=b59d6b55&x-expires=1749214800&x-signature=vujnaPExgIzJBFrwDGZDyqm8wcE%3D&shp=b59d6b55&shcp=-",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": null,
+      "transcript_available": false,
+      "transcript_text": null,
+      "transcript_language": null
+    },
+    {
+      "id": "7511436170845310239",
+      "description": "The Egyptians don’t stand a chance!  #BibleReels #POV #Veo3 #AIVisuals #googleveo3 #BibleTok #future #ai #veo3 #fyp #viral #creatorsearchinsights #JesusVibes #trending #oldtestament #FaithTok #viralreels ",
+      "clean_description": "The Egyptians don’t stand a chance!",
+      "desc_length": 35,
+      "original_desc_length": 204,
+      "created_at": "2025-06-02T21:29:00",
+      "author_username": "aibiblehistory",
+      "author_nickname": "Bible AI",
+      "author_id": "7510634456086496286",
+      "duration": 8,
+      "search_type": "hashtag",
+      "search_term": "AI",
+      "stats": {
+        "views": 679100,
+        "likes": 19000,
+        "comments": 549,
+        "shares": 4597
+      },
+      "music": {
+        "id": "7511436161236175646",
+        "title": "original sound",
+        "author": "Bible AI"
+      },
+      "hashtags": [
+        "BibleReels",
+        "POV",
+        "Veo3",
+        "AIVisuals",
+        "googleveo3",
+        "BibleTok",
+        "future",
+        "ai",
+        "veo3",
+        "fyp",
+        "viral",
+        "creatorsearchinsights",
+        "JesusVibes",
+        "trending",
+        "oldtestament",
+        "FaithTok",
+        "viralreels"
+      ],
+      "video_url": "https://v16-webapp-prime.tiktok.com/video/tos/maliva/tos-maliva-ve-0068c799-us/o0zefADeY95QwFGJg79LsZURAQq7FROIDRpfEz/?a=1988&bti=NDU3ZjAwOg%3D%3D&ch=0&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C&cv=1&br=1600&bt=800&cs=0&ds=6&ft=I~da4oAGD12NvY9cmWIxRMFSWl-H-UjNSmopiX&mime_type=video_mp4&qs=0&rc=Zzk4O2U8ODo3Nmg5MzlmZEBpM3htdG45cjV5MzMzaTczNEBfMDQuXy9fNjYxLS1fLi0xYSNqZzFyMmRzanJhLS1kMTJzcw%3D%3D&btag=e000b0000&expire=1749217612&l=20250604214644EB99314F83B69B031C16&ply_type=2&policy=2&signature=e2f39dc15046f71c5ad81ac092a4e7a8&tk=tt_chain_token",
+      "tiktok_url": "https://www.tiktok.com/@aibiblehistory/video/7511436170845310239",
+      "cover_url": "https://p16-pu-sign-useast8.tiktokcdn-us.com/tos-useast8-p-0068-tx2/oUeRGEYDA9iFJszFfpgGQCApQ77R3eQJfL8JVU~tplv-tiktokx-origin.image?dr=10395&x-expires=1749214800&x-signature=3GSrlg4FFip1sKxM%2BCVRoIXwyB0%3D&t=4d5b0474&ps=13740610&shp=b59d6b55&shcp=43f4a2f9&idc=no1a",
+      "meaningful_content": true,
+      "filter_applied": true,
+      "min_desc_length_used": 10,
+      "transcript": {
+        "text": "Yo, what's up, guys? You are not gonna believe this.",
+        "language": "auto",
+        "source": "rapidapi_tiktok_transcript",
+        "available_languages": [],
+        "confidence": null,
+        "duration": null
+      },
+      "transcript_available": true,
+      "transcript_text": "Yo, what's up, guys? You are not gonna believe this.",
+      "transcript_language": "auto"
+    }
+  ]
+}
