@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script per raccogliere video TikTok usando TikTok-Api (davidteather)
-STEP 2: TikTok scraper con argparse + RapidAPI Transcript Integration
+TikTok Scraper Avanzato - Versione Completa
+Features: Metadata semplificati, Rilevanza video, Commenti, Transcript
 """
 
 import os
@@ -60,29 +60,26 @@ def setup_logger(log_level="INFO"):
     return logger
 
 def parse_arguments():
-    """Configura argparse - Pattern simile a Twitter scraper"""
+    """Configura argparse con tutti i parametri aggiornati"""
     parser = argparse.ArgumentParser(
-        description='TikTok Scraper avanzato con filtri, automazione e transcript',
+        description='TikTok Scraper avanzato con rilevanza, commenti e transcript',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Esempi di utilizzo:
   # Cerca video per hashtag
   %(prog)s --hashtag AI --count 20
 
+  # Con commenti e transcript
+  %(prog)s --hashtag AI --count 10 --add-comments --add-transcript
+
   # Cerca video di un utente specifico
-  %(prog)s --user therock --count 15
+  %(prog)s --user therock --count 15 --add-comments
 
-  # Video trending
-  %(prog)s --trending --count 25
+  # Video trending con commenti
+  %(prog)s --trending --count 25 --add-comments --max-comments 5
 
-  # Con transcript audio
-  %(prog)s --hashtag AI --count 10 --add-transcript
-
-  # Modalità automatica
-  %(prog)s --hashtag tech --count 30 --auto --quiet
-
-  # Debug mode
-  %(prog)s --hashtag startup --count 10 --verbose
+  # Modalità automatica completa
+  %(prog)s --hashtag tech --count 20 --auto --add-comments --add-transcript --quiet
 
   # Test configurazione
   %(prog)s --hashtag test --dry-run
@@ -118,7 +115,7 @@ Esempi di utilizzo:
         help='Numero video da raccogliere (default: 20, min: 5, max: 100)'
     )
     
-    # ✅ NUOVO: Parametri transcript
+    # Parametri transcript
     parser.add_argument(
         '--add-transcript',
         action='store_true',
@@ -130,6 +127,20 @@ Esempi di utilizzo:
         type=str,
         default='auto',
         help='Lingua per transcript (auto, en, it, es, fr, de, etc.) - default: auto'
+    )
+    
+    # ✅ NUOVO: Parametri commenti
+    parser.add_argument(
+        '--add-comments',
+        action='store_true',
+        help='Aggiungi commenti dei video (rallenta il processo)'
+    )
+    
+    parser.add_argument(
+        '--max-comments',
+        type=int,
+        default=10,
+        help='Numero massimo commenti per video (default: 10, max: 50)'
     )
     
     # Filtri video
@@ -151,7 +162,15 @@ Esempi di utilizzo:
         help='Numero minimo di visualizzazioni (opzionale)'
     )
     
-    # Filtri contenuto (simili a Twitter)
+    # ✅ NUOVO: Parametri rilevanza
+    parser.add_argument(
+        '--relevance-threshold',
+        type=float,
+        default=0.45,
+        help='Soglia rilevanza video (0.0-1.0, default: 0.45)'
+    )
+    
+    # Filtri contenuto
     parser.add_argument(
         '--no-filter',
         action='store_true',
@@ -234,22 +253,14 @@ Esempi di utilizzo:
     )
     
     parser.add_argument(
-        '--download-videos',
-        action='store_true',
-        help='Scarica anche i file video (attenzione: richiede molto spazio)'
-    )
-    
-    parser.add_argument(
         '--version',
         action='version',
-        version='TikTokScraper v1.1 - Con Transcript Support'
+        version='TikTokScraper v2.0 - Con Rilevanza e Commenti'
     )
     
     args = parser.parse_args()
     
     # Validazione argomenti
-    
-    # Gestione verbosity
     if args.quiet and args.verbose:
         parser.error("❌ Non puoi usare --quiet e --verbose insieme!")
     
@@ -265,6 +276,14 @@ Esempi di utilizzo:
     # Validazione count
     if args.count < 5 or args.count > 100:
         parser.error(f"❌ Count deve essere tra 5 e 100 (ricevuto: {args.count})")
+    
+    # Validazione max-comments
+    if args.max_comments < 1 or args.max_comments > 50:
+        parser.error(f"❌ max-comments deve essere tra 1 e 50 (ricevuto: {args.max_comments})")
+    
+    # Validazione relevance-threshold
+    if args.relevance_threshold < 0.0 or args.relevance_threshold > 1.0:
+        parser.error(f"❌ relevance-threshold deve essere tra 0.0 e 1.0 (ricevuto: {args.relevance_threshold})")
     
     # Validazione durata
     if args.min_duration and args.max_duration:
@@ -312,11 +331,12 @@ def get_ms_token(args, logger):
     
     return ms_token
 
-# ✅ NUOVO: Funzioni transcript
+# ================================
+# FUNZIONI TRANSCRIPT
+# ================================
+
 def get_video_transcript(video_url, language='auto', logger=None):
     """Ottiene transcript del video usando RapidAPI TikTok Transcript"""
-    
-    # Ottieni API key da .env
     rapidapi_key = os.environ.get('RAPIDAPI_KEY') or os.environ.get('TIKTOK_TRANSCRIPT_API_KEY')
     
     if not rapidapi_key:
@@ -326,7 +346,6 @@ def get_video_transcript(video_url, language='auto', logger=None):
     try:
         logger.debug(f"🎙️  Richiesta transcript per: {video_url[:50]}...")
         
-        # ✅ CORRETTO: Endpoint e metodo dalla documentazione
         url = "https://tiktok-video-transcript.p.rapidapi.com/transcribe"
         
         headers = {
@@ -334,25 +353,19 @@ def get_video_transcript(video_url, language='auto', logger=None):
             "X-RapidAPI-Host": "tiktok-video-transcript.p.rapidapi.com"
         }
         
-        # ✅ CORRETTO: Parametri GET come query string
         params = {
             "url": video_url,
             "language": "eng-US" if language == 'en' else language,
             "timestamps": "false"
         }
         
-        # ✅ CORRETTO: GET request invece di POST
         response = requests.get(url, headers=headers, params=params, timeout=30)
         
         if response.status_code == 200:
             data = response.json()
             
-            # Estrai transcript dal response
             transcript_text = None
-            
-            # Gestisci diversi formati di response
             if isinstance(data, dict):
-                # Possibili chiavi per il transcript
                 transcript_text = (
                     data.get('transcript') or 
                     data.get('text') or 
@@ -368,10 +381,7 @@ def get_video_transcript(video_url, language='auto', logger=None):
                 return {
                     'text': transcript_text.strip(),
                     'language': language,
-                    'source': 'rapidapi_tiktok_transcript',
-                    'available_languages': data.get('available_languages', []),
-                    'confidence': data.get('confidence'),
-                    'duration': data.get('duration')
+                    'source': 'rapidapi_tiktok_transcript'
                 }
             else:
                 logger.debug("⚠️  Transcript vuoto o non disponibile")
@@ -385,100 +395,10 @@ def get_video_transcript(video_url, language='auto', logger=None):
             return None
         else:
             logger.warning(f"⚠️  Errore RapidAPI transcript: {response.status_code}")
-            logger.debug(f"Response: {response.text[:200]}")
             return None
             
     except requests.exceptions.Timeout:
         logger.warning("⏱️  Timeout richiesta transcript")
-        return None
-    except requests.exceptions.RequestException as e:
-        logger.warning(f"⚠️  Errore rete transcript: {e}")
-        return None
-    except Exception as e:
-        logger.warning(f"⚠️  Errore generico transcript: {e}")
-        return None
-    
-    """Ottiene transcript del video usando RapidAPI TikTok Transcript"""
-    
-    # Ottieni API key da .env
-    rapidapi_key = os.environ.get('RAPIDAPI_KEY') or os.environ.get('TIKTOK_TRANSCRIPT_API_KEY')
-    
-    if not rapidapi_key:
-        logger.warning("⚠️  RAPIDAPI_KEY non trovato in .env - transcript disabilitato")
-        return None
-    
-    try:
-        logger.debug(f"🎙️  Richiesta transcript per: {video_url[:50]}...")
-        
-        # RapidAPI endpoint
-        url = "https://tiktok-video-transcript.p.rapidapi.com/get_transcript"
-        
-        headers = {
-            "X-RapidAPI-Key": rapidapi_key,
-            "X-RapidAPI-Host": "tiktok-video-transcript.p.rapidapi.com",
-            "Content-Type": "application/json"
-        }
-        
-        # Payload per RapidAPI
-        payload = {
-            "url": video_url,
-            "language": language if language != 'auto' else None
-        }
-        
-        # Rimuovi parametri None
-        payload = {k: v for k, v in payload.items() if v is not None}
-        
-        # Chiamata API con timeout
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Estrai transcript dal response
-            transcript_text = None
-            
-            # Gestisci diversi formati di response
-            if isinstance(data, dict):
-                # Possibili chiavi per il transcript
-                transcript_text = (
-                    data.get('transcript') or 
-                    data.get('text') or 
-                    data.get('transcription') or
-                    data.get('result', {}).get('transcript')
-                )
-            elif isinstance(data, str):
-                transcript_text = data
-            
-            if transcript_text and len(transcript_text.strip()) > 0:
-                logger.debug(f"✅ Transcript ottenuto: {len(transcript_text)} caratteri")
-                return {
-                    'text': transcript_text.strip(),
-                    'language': language,
-                    'source': 'rapidapi_tiktok_transcript',
-                    'available_languages': data.get('available_languages', []),
-                    'confidence': data.get('confidence'),
-                    'duration': data.get('duration')
-                }
-            else:
-                logger.debug("⚠️  Transcript vuoto o non disponibile")
-                return None
-                
-        elif response.status_code == 429:
-            logger.warning("🚫 Rate limit RapidAPI raggiunto per transcript")
-            return None
-        elif response.status_code == 402:
-            logger.warning("💳 Quota RapidAPI esaurita per transcript")
-            return None
-        else:
-            logger.warning(f"⚠️  Errore RapidAPI transcript: {response.status_code}")
-            logger.debug(f"Response: {response.text[:200]}")
-            return None
-            
-    except requests.exceptions.Timeout:
-        logger.warning("⏱️  Timeout richiesta transcript")
-        return None
-    except requests.exceptions.RequestException as e:
-        logger.warning(f"⚠️  Errore rete transcript: {e}")
         return None
     except Exception as e:
         logger.warning(f"⚠️  Errore generico transcript: {e}")
@@ -489,21 +409,198 @@ def should_get_transcript(args, video_count, logger):
     if not args.add_transcript:
         return False
     
-    # Controlla se abbiamo API key
     rapidapi_key = os.environ.get('RAPIDAPI_KEY') or os.environ.get('TIKTOK_TRANSCRIPT_API_KEY')
     if not rapidapi_key:
         logger.warning("⚠️  Transcript richiesto ma RAPIDAPI_KEY mancante")
         return False
     
-    # Avviso per piano free
     if video_count > 10:
         logger.warning(f"⚠️  Piano Free RapidAPI limitato (~100 richieste/mese)")
         logger.warning(f"⚠️  Stai processando {video_count} video - potresti esaurire quota")
     
     return True
 
+# ================================
+# FUNZIONI RILEVANZA (STEP 2)
+# ================================
+
+def calculate_hashtag_relevance(search_term, video_hashtags, logger):
+    """Calcola rilevanza basata su hashtag del video"""
+    try:
+        if not video_hashtags or not search_term:
+            return 0.0
+        
+        search_term_lower = search_term.lower().strip()
+        matches = 0
+        partial_matches = 0
+        
+        for hashtag in video_hashtags:
+            hashtag_lower = hashtag.lower().strip()
+            
+            # Match esatto
+            if search_term_lower == hashtag_lower:
+                matches += 2  # Peso maggiore per match esatto
+            # Match parziale (search_term contenuto nell'hashtag)
+            elif search_term_lower in hashtag_lower:
+                matches += 1.5
+            # Match parziale inverso (hashtag contenuto nel search_term)
+            elif hashtag_lower in search_term_lower:
+                partial_matches += 1
+        
+        # Calcola score (normalizzato tra 0 e 1)
+        total_score = matches + (partial_matches * 0.5)
+        max_possible_score = len(video_hashtags) * 2  # Peso massimo per tutti hashtag
+        
+        hashtag_score = min(total_score / max_possible_score, 1.0) if max_possible_score > 0 else 0.0
+        
+        logger.debug(f"🏷️  Hashtag relevance: {hashtag_score:.2f} (matches: {matches}, partial: {partial_matches})")
+        return hashtag_score
+        
+    except Exception as e:
+        logger.warning(f"⚠️  Errore calcolo hashtag relevance: {e}")
+        return 0.0
+
+def calculate_description_relevance(search_term, description, logger):
+    """Calcola rilevanza basata sulla descrizione del video"""
+    try:
+        if not description or not search_term:
+            return 0.0
+        
+        search_term_lower = search_term.lower().strip()
+        description_lower = description.lower()
+        
+        # Conta occorrenze del termine di ricerca nella descrizione
+        search_words = search_term_lower.split()
+        matches = 0
+        
+        for word in search_words:
+            word_count = description_lower.count(word)
+            matches += word_count
+        
+        # Normalizza in base alla lunghezza della descrizione
+        description_words = len(description_lower.split())
+        
+        if description_words == 0:
+            return 0.0
+        
+        # Score normalizzato (max 1.0)
+        description_score = min(matches / max(description_words * 0.1, 1), 1.0)
+        
+        logger.debug(f"📝 Description relevance: {description_score:.2f} (matches: {matches}, words: {description_words})")
+        return description_score
+        
+    except Exception as e:
+        logger.warning(f"⚠️  Errore calcolo description relevance: {e}")
+        return 0.0
+
+def calculate_video_relevance(search_term, video_data, relevance_threshold, logger):
+    """Calcola score di rilevanza complessivo del video"""
+    try:
+        hashtags = video_data.get('hashtags', [])
+        description = video_data.get('description', '')
+        
+        # Calcola score per hashtag e descrizione
+        hashtag_score = calculate_hashtag_relevance(search_term, hashtags, logger)
+        description_score = calculate_description_relevance(search_term, description, logger)
+        
+        # Peso combinato: hashtag hanno più importanza (60%) della descrizione (40%)
+        relevance_score = (hashtag_score * 0.6) + (description_score * 0.4)
+        
+        # Usa la soglia configurabile
+        is_relevant = relevance_score >= relevance_threshold
+        
+        logger.debug(f"🎯 Final relevance: {relevance_score:.3f} ({'✅ RELEVANT' if is_relevant else '❌ NOT RELEVANT'})")
+        
+        return {
+            'relevance_score': round(relevance_score, 3),
+            'is_relevant': is_relevant,
+            'hashtag_score': round(hashtag_score, 3),
+            'description_score': round(description_score, 3)
+        }
+        
+    except Exception as e:
+        logger.warning(f"⚠️  Errore calcolo rilevanza video: {e}")
+        return {
+            'relevance_score': 0.0,
+            'is_relevant': False,
+            'hashtag_score': 0.0,
+            'description_score': 0.0
+        }
+
+# ================================
+# FUNZIONI COMMENTI (STEP 4)
+# ================================
+
+async def get_video_comments(api, video_id, max_comments=10, logger=None):
+    """Recupera i commenti di un video TikTok"""
+    try:
+        if not video_id or video_id == 'unknown':
+            logger.debug("⚠️  Video ID mancante per commenti")
+            return []
+        
+        logger.debug(f"💬 Recuperando commenti per video {video_id}...")
+        
+        # Crea oggetto video per ottenere commenti
+        video_obj = api.video(id=video_id)
+        
+        comments_list = []
+        comment_count = 0
+        
+        # Itera sui commenti del video
+        async for comment in video_obj.comments(count=max_comments * 2):  # Richiedi più commenti per sicurezza
+            try:
+                comment_dict = comment.as_dict
+                comment_text = comment_dict.get('text', '').strip()
+                
+                # Filtra commenti vuoti o troppo corti
+                if comment_text and len(comment_text) >= 2:
+                    # ✅ MODIFICATO: Crea oggetto per ogni commento
+                    comment_obj = {
+                        "text": comment_text
+                    }
+                    comments_list.append(comment_obj)
+                    comment_count += 1
+                    
+                    # Fermati quando raggiungi il limite
+                    if comment_count >= max_comments:
+                        break
+                        
+            except Exception as e:
+                logger.debug(f"⚠️  Errore elaborazione singolo commento: {e}")
+                continue
+        
+        logger.debug(f"✅ Raccolti {len(comments_list)} commenti per video {video_id}")
+        return comments_list
+        
+    except Exception as e:
+        logger.debug(f"⚠️  Errore recupero commenti per video {video_id}: {e}")
+        return []
+
+def should_get_comments(args, video_count, logger):
+    """Decide se recuperare commenti in base ai parametri"""
+    if not args.add_comments:
+        return False
+    
+    if video_count > 20:
+        logger.warning(f"⚠️  Recupero commenti per {video_count} video - potrebbe essere lento")
+        logger.warning(f"⚠️  Considera di ridurre --count per test più veloci")
+    
+    return True
+
+# ================================
+# FUNZIONI UTILITY
+# ================================
+
+def extract_hashtags_from_desc(description):
+    """Estrae hashtag dalla descrizione"""
+    try:
+        hashtags = re.findall(r'#(\w+)', description)
+        return hashtags
+    except:
+        return []
+
 def clean_description(desc, logger):
-    """Pulisce la descrizione del video (simile a clean_tweet_text)"""
+    """Pulisce la descrizione del video"""
     try:
         if not desc:
             return ""
@@ -521,7 +618,7 @@ def clean_description(desc, logger):
         return desc
 
 def is_meaningful_description(clean_desc, search_term, min_length, logger):
-    """Decide se la descrizione ha abbastanza contenuto (simile a is_meaningful_text)"""
+    """Decide se la descrizione ha abbastanza contenuto"""
     try:
         if not clean_desc:
             return False
@@ -548,7 +645,7 @@ def is_meaningful_description(clean_desc, search_term, min_length, logger):
         return True
 
 def apply_video_filters(video_data, args, search_term, logger):
-    """Applica filtri ai video (durata, views, descrizione)"""
+    """Applica filtri ai video (durata, views, descrizione, rilevanza)"""
     try:
         # Filtro durata
         duration = video_data.get('duration', 0)
@@ -562,7 +659,7 @@ def apply_video_filters(video_data, args, search_term, logger):
         
         # Filtro visualizzazioni
         stats = video_data.get('stats', {})
-        views = stats.get('playCount', 0)
+        views = stats.get('views', 0)
         if args.min_views and views < args.min_views:
             logger.debug(f"🗑️  Video {video_data.get('id')} scartato: views {views} < {args.min_views}")
             return False
@@ -576,21 +673,121 @@ def apply_video_filters(video_data, args, search_term, logger):
                 logger.debug(f"🗑️  Video {video_data.get('id')} scartato: descrizione non significativa")
                 return False
         
+        # ✅ NUOVO: Filtro rilevanza
+        is_relevant = video_data.get('is_relevant', True)
+        if not is_relevant:
+            relevance_score = video_data.get('relevance_score', 0.0)
+            logger.debug(f"🗑️  Video {video_data.get('id')} scartato: rilevanza {relevance_score:.3f} < {args.relevance_threshold}")
+            return False
+        
         return True
         
     except Exception as e:
         logger.warning(f"⚠️  Errore applicazione filtri: {e}")
         return True  # In caso di errore, mantieni il video
 
+# ================================
+# FUNZIONE ESTRAZIONE DATI VIDEO
+# ================================
+
+def extract_video_data(video_dict, search_type, search_term, logger, get_transcript=False, transcript_language='auto', relevance_threshold=0.45):
+    """Estrae e normalizza dati dal video TikTok - VERSIONE SEMPLIFICATA"""
+    try:
+        # Dati base del video
+        video_id = video_dict.get('id', 'unknown')
+        desc = video_dict.get('desc', '')
+        
+        # Dati autore
+        author = video_dict.get('author', {})
+        author_username = author.get('uniqueId', 'unknown')
+        
+        # Statistiche
+        stats = video_dict.get('stats', {})
+        
+        # Video info
+        video_info = video_dict.get('video', {})
+        duration = video_info.get('duration', 0)
+        
+        # Data creazione
+        create_time = video_dict.get('createTime', 0)
+        try:
+            created_at = datetime.fromtimestamp(int(create_time)).isoformat() if create_time else None
+        except:
+            created_at = None
+        
+        # URL TikTok pubblico
+        tiktok_public_url = f"https://www.tiktok.com/@{author_username}/video/{video_id}"
+        
+        # Ottieni transcript se richiesto
+        transcript_text = None
+        if get_transcript and author_username != 'unknown' and video_id != 'unknown':
+            transcript_data = get_video_transcript(tiktok_public_url, transcript_language, logger)
+            if transcript_data:
+                transcript_text = transcript_data.get('text')
+        
+        # Estrai hashtags
+        hashtags = extract_hashtags_from_desc(desc)
+        
+        # ✅ STRUTTURA DATI SEMPLIFICATA
+        video_data = {
+            'id': video_id,
+            'description': desc,
+            'created_at': created_at,
+            'author_username': author_username,
+            'duration': duration,
+            'search_term': search_term,
+            'stats': {
+                'views': stats.get('playCount', 0),
+                'likes': stats.get('diggCount', 0),
+                'comments': stats.get('commentCount', 0),
+                'shares': stats.get('shareCount', 0)
+            },
+            'hashtags': hashtags,
+            'tiktok_url': tiktok_public_url,
+            'transcript_text': transcript_text,
+            'transcript_available': bool(transcript_text),
+            'comments': [],  # Sarà popolato con oggetti [{"text": "..."}, {"text": "..."}]
+            'comments_count': 0,
+            'comments_retrieved': False
+        }
+        
+        # Calcola rilevanza del video
+        relevance_data = calculate_video_relevance(search_term, video_data, relevance_threshold, logger)
+        video_data.update(relevance_data)
+        
+        return video_data
+        
+    except Exception as e:
+        logger.warning(f"⚠️  Errore estrazione dati video: {e}")
+        return {
+            'id': 'error',
+            'description': '',
+            'transcript_text': None,
+            'transcript_available': False,
+            'tiktok_url': '',
+            'comments': [],  # Array di oggetti {"text": "..."}
+            'comments_count': 0,
+            'comments_retrieved': False,
+            'error': str(e)
+        }
+
+# ================================
+# FUNZIONI DI RICERCA
+# ================================
+
 async def search_hashtag_videos(api, hashtag, count, args, logger):
     """Cerca video per hashtag"""
     try:
         logger.info(f"🔍 Cercando {count} video per hashtag #{hashtag}")
         
-        # Controllo transcript
+        # Controllo transcript e commenti
         get_transcript = should_get_transcript(args, count, logger)
+        get_comments = should_get_comments(args, count, logger)
+        
         if get_transcript:
             logger.info("🎙️  Transcript abilitato - tempo di elaborazione aumentato")
+        if get_comments:
+            logger.info(f"💬 Commenti abilitati (max {args.max_comments} per video) - tempo di elaborazione aumentato")
         
         hashtag_obj = api.hashtag(name=hashtag)
         
@@ -598,19 +795,34 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
         processed = 0
         kept = 0
         
-        async for video in hashtag_obj.videos(count=count * 2):  # Richiedi più video per compensare filtri
+        async for video in hashtag_obj.videos(count=count * 3):  # Richiedi più video per compensare filtri
             processed += 1
             video_dict = video.as_dict
             
-            # Estrai dati principali con transcript
+            # Estrai dati principali
             video_data = extract_video_data(
                 video_dict, 'hashtag', hashtag, logger, 
                 get_transcript=get_transcript, 
-                transcript_language=args.transcript_language
+                transcript_language=args.transcript_language,
+                relevance_threshold=args.relevance_threshold
             )
             
             # Applica filtri
             if apply_video_filters(video_data, args, hashtag, logger):
+                # ✅ NUOVO: Aggiungi commenti se richiesto
+                # Struttura: comments = [{"text": "Commento 1"}, {"text": "Commento 2"}]
+                if get_comments:
+                    try:
+                        comments = await get_video_comments(api, video_data['id'], args.max_comments, logger)
+                        video_data['comments'] = comments
+                        video_data['comments_count'] = len(comments)
+                        video_data['comments_retrieved'] = True
+                    except Exception as e:
+                        logger.debug(f"⚠️  Errore recupero commenti per video {video_data['id']}: {e}")
+                        video_data['comments'] = []  # Array vuoto di oggetti
+                        video_data['comments_count'] = 0
+                        video_data['comments_retrieved'] = False
+                
                 videos.append(video_data)
                 kept += 1
                 logger.debug(f"✅ Video {video_data['id']} mantenuto")
@@ -619,16 +831,23 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
                     break
             
             # Limite massimo per evitare loop infiniti
-            if processed >= count * 3:
+            if processed >= count * 5:
                 break
         
         logger.info(f"📊 Risultati hashtag #{hashtag}:")
         logger.info(f"   - Processati: {processed}")
         logger.info(f"   - Mantenuti: {kept}")
         logger.info(f"   - Scartati: {processed - kept}")
+        
         if get_transcript:
-            transcript_count = sum(1 for v in videos if v.get('transcript'))
+            transcript_count = sum(1 for v in videos if v.get('transcript_available'))
             logger.info(f"   - Con transcript: {transcript_count}")
+            
+        if get_comments:
+            comments_count = sum(1 for v in videos if v.get('comments_retrieved'))
+            total_comments = sum(v.get('comments_count', 0) for v in videos)
+            logger.info(f"   - Con commenti: {comments_count}")
+            logger.info(f"   - Commenti totali: {total_comments}")
         
         return videos
         
@@ -641,10 +860,14 @@ async def search_user_videos(api, username, count, args, logger):
     try:
         logger.info(f"🔍 Cercando {count} video dell'utente @{username}")
         
-        # Controllo transcript
+        # Controllo transcript e commenti
         get_transcript = should_get_transcript(args, count, logger)
+        get_comments = should_get_comments(args, count, logger)
+        
         if get_transcript:
             logger.info("🎙️  Transcript abilitato - tempo di elaborazione aumentato")
+        if get_comments:
+            logger.info(f"💬 Commenti abilitati (max {args.max_comments} per video) - tempo di elaborazione aumentato")
         
         user_obj = api.user(username)
         
@@ -659,19 +882,33 @@ async def search_user_videos(api, username, count, args, logger):
         processed = 0
         kept = 0
         
-        async for video in user_obj.videos(count=count * 2):
+        async for video in user_obj.videos(count=count * 3):
             processed += 1
             video_dict = video.as_dict
             
-            # Estrai dati principali con transcript
+            # Estrai dati principali
             video_data = extract_video_data(
                 video_dict, 'user', username, logger,
                 get_transcript=get_transcript,
-                transcript_language=args.transcript_language
+                transcript_language=args.transcript_language,
+                relevance_threshold=args.relevance_threshold
             )
             
             # Applica filtri
             if apply_video_filters(video_data, args, username, logger):
+                # ✅ NUOVO: Aggiungi commenti se richiesto
+                if get_comments:
+                    try:
+                        comments = await get_video_comments(api, video_data['id'], args.max_comments, logger)
+                        video_data['comments'] = comments
+                        video_data['comments_count'] = len(comments)
+                        video_data['comments_retrieved'] = True
+                    except Exception as e:
+                        logger.debug(f"⚠️  Errore recupero commenti per video {video_data['id']}: {e}")
+                        video_data['comments'] = []  # Array vuoto di oggetti
+                        video_data['comments_count'] = 0
+                        video_data['comments_retrieved'] = False
+                
                 videos.append(video_data)
                 kept += 1
                 logger.debug(f"✅ Video {video_data['id']} mantenuto")
@@ -679,16 +916,23 @@ async def search_user_videos(api, username, count, args, logger):
                 if kept >= count:
                     break
             
-            if processed >= count * 3:
+            if processed >= count * 5:
                 break
         
         logger.info(f"📊 Risultati utente @{username}:")
         logger.info(f"   - Processati: {processed}")
         logger.info(f"   - Mantenuti: {kept}")
         logger.info(f"   - Scartati: {processed - kept}")
+        
         if get_transcript:
-            transcript_count = sum(1 for v in videos if v.get('transcript'))
+            transcript_count = sum(1 for v in videos if v.get('transcript_available'))
             logger.info(f"   - Con transcript: {transcript_count}")
+            
+        if get_comments:
+            comments_count = sum(1 for v in videos if v.get('comments_retrieved'))
+            total_comments = sum(v.get('comments_count', 0) for v in videos)
+            logger.info(f"   - Con commenti: {comments_count}")
+            logger.info(f"   - Commenti totali: {total_comments}")
         
         return videos
         
@@ -701,28 +945,46 @@ async def search_trending_videos(api, count, args, logger):
     try:
         logger.info(f"🔍 Cercando {count} video trending")
         
-        # Controllo transcript
+        # Controllo transcript e commenti
         get_transcript = should_get_transcript(args, count, logger)
+        get_comments = should_get_comments(args, count, logger)
+        
         if get_transcript:
             logger.info("🎙️  Transcript abilitato - tempo di elaborazione aumentato")
+        if get_comments:
+            logger.info(f"💬 Commenti abilitati (max {args.max_comments} per video) - tempo di elaborazione aumentato")
         
         videos = []
         processed = 0
         kept = 0
         
-        async for video in api.trending.videos(count=count * 2):
+        async for video in api.trending.videos(count=count * 3):
             processed += 1
             video_dict = video.as_dict
             
-            # Estrai dati principali con transcript
+            # Estrai dati principali
             video_data = extract_video_data(
                 video_dict, 'trending', 'trending', logger,
                 get_transcript=get_transcript,
-                transcript_language=args.transcript_language
+                transcript_language=args.transcript_language,
+                relevance_threshold=args.relevance_threshold
             )
             
             # Applica filtri
             if apply_video_filters(video_data, args, 'trending', logger):
+                # ✅ NUOVO: Aggiungi commenti se richiesto
+                if get_comments:
+                    try:
+                        comments = await get_video_comments(api, video_data['id'], args.max_comments, logger)
+                        video_data['comments'] = comments
+                        video_data['comments_count'] = len(comments)
+                        video_data['comments_retrieved'] = True
+                    except Exception as e:
+                        logger.debug(f"⚠️  Errore recupero commenti per video {video_data['id']}: {e}")
+                        video_data['comments'] = []  # Array vuoto di oggetti
+                        video_data['comments_count'] = 0
+                        video_data['comments_retrieved'] = False
+                
                 videos.append(video_data)
                 kept += 1
                 logger.debug(f"✅ Video trending {video_data['id']} mantenuto")
@@ -730,16 +992,23 @@ async def search_trending_videos(api, count, args, logger):
                 if kept >= count:
                     break
             
-            if processed >= count * 3:
+            if processed >= count * 5:
                 break
         
         logger.info(f"📊 Risultati trending:")
         logger.info(f"   - Processati: {processed}")
         logger.info(f"   - Mantenuti: {kept}")
         logger.info(f"   - Scartati: {processed - kept}")
+        
         if get_transcript:
-            transcript_count = sum(1 for v in videos if v.get('transcript'))
+            transcript_count = sum(1 for v in videos if v.get('transcript_available'))
             logger.info(f"   - Con transcript: {transcript_count}")
+            
+        if get_comments:
+            comments_count = sum(1 for v in videos if v.get('comments_retrieved'))
+            total_comments = sum(v.get('comments_count', 0) for v in videos)
+            logger.info(f"   - Con commenti: {comments_count}")
+            logger.info(f"   - Commenti totali: {total_comments}")
         
         return videos
         
@@ -747,199 +1016,9 @@ async def search_trending_videos(api, count, args, logger):
         logger.error(f"❌ Errore ricerca trending: {e}")
         return []
 
-def extract_video_data(video_dict, search_type, search_term, logger, get_transcript=False, transcript_language='auto'):
-    """Estrae e normalizza dati dal video TikTok + transcript opzionale"""
-    try:
-        # Dati base del video
-        video_id = video_dict.get('id', 'unknown')
-        desc = video_dict.get('desc', '')
-        
-        # Dati autore
-        author = video_dict.get('author', {})
-        author_username = author.get('uniqueId', 'unknown')
-        author_nickname = author.get('nickname', 'unknown')
-        
-        # Statistiche
-        stats = video_dict.get('stats', {})
-        
-        # Musica
-        music = video_dict.get('music', {})
-        
-        # Video info
-        video_info = video_dict.get('video', {})
-        duration = video_info.get('duration', 0)
-        
-        # Data creazione
-        create_time = video_dict.get('createTime', 0)
-        try:
-            created_at = datetime.fromtimestamp(int(create_time)).isoformat() if create_time else None
-        except:
-            created_at = None
-        
-        # Pulisci descrizione
-        clean_desc = clean_description(desc, logger)
-        
-        # ✅ NUOVO: Costruisci URL TikTok pubblico per transcript
-        tiktok_public_url = f"https://www.tiktok.com/@{author_username}/video/{video_id}"
-        
-        # URL video diretto (per download)
-        video_direct_url = video_info.get('playAddr', '') or video_dict.get('video', {}).get('downloadAddr', '')
-        
-        # ✅ NUOVO: Ottieni transcript se richiesto (usa URL pubblico)
-        transcript_data = None
-        if get_transcript and author_username != 'unknown' and video_id != 'unknown':
-            transcript_data = get_video_transcript(tiktok_public_url, transcript_language, logger)
-        
-        # ✅ MODIFICATO: Struttura dati con transcript e URL pubblico
-        video_data = {
-            'id': video_id,
-            'description': desc,
-            'clean_description': clean_desc,
-            'desc_length': len(clean_desc),
-            'original_desc_length': len(desc),
-            'created_at': created_at,
-            'author_username': author_username,
-            'author_nickname': author_nickname,
-            'author_id': author.get('id', 'unknown'),
-            'duration': duration,
-            'search_type': search_type,
-            'search_term': search_term,
-            'stats': {
-                'views': stats.get('playCount', 0),
-                'likes': stats.get('diggCount', 0),
-                'comments': stats.get('commentCount', 0),
-                'shares': stats.get('shareCount', 0)
-            },
-            'music': {
-                'id': music.get('id', ''),
-                'title': music.get('title', ''),
-                'author': music.get('authorName', '')
-            },
-            'hashtags': extract_hashtags_from_desc(desc),
-            'video_url': video_direct_url,  # URL diretto per download
-            'tiktok_url': tiktok_public_url,  # ✅ NUOVO: URL pubblico TikTok
-            'cover_url': video_info.get('cover', ''),
-            'meaningful_content': True,
-            'filter_applied': True,
-            'min_desc_length_used': 10,  # Verrà aggiornato
-            # ✅ NUOVO: Campi transcript
-            'transcript': transcript_data,
-            'transcript_available': bool(transcript_data),
-            'transcript_text': transcript_data.get('text') if transcript_data else None,
-            'transcript_language': transcript_data.get('language') if transcript_data else None
-        }
-        
-        return video_data
-        
-    except Exception as e:
-        logger.warning(f"⚠️  Errore estrazione dati video: {e}")
-        return {
-            'id': 'error',
-            'description': '',
-            'clean_description': '',
-            'transcript': None,
-            'transcript_available': False,
-            'tiktok_url': '',
-            'video_url': '',
-            'error': str(e)
-        }
-    """Estrae e normalizza dati dal video TikTok + transcript opzionale"""
-    try:
-        # Dati base del video
-        video_id = video_dict.get('id', 'unknown')
-        desc = video_dict.get('desc', '')
-        
-        # Dati autore
-        author = video_dict.get('author', {})
-        author_username = author.get('uniqueId', 'unknown')
-        author_nickname = author.get('nickname', 'unknown')
-        
-        # Statistiche
-        stats = video_dict.get('stats', {})
-        
-        # Musica
-        music = video_dict.get('music', {})
-        
-        # Video info
-        video_info = video_dict.get('video', {})
-        duration = video_info.get('duration', 0)
-        
-        # Data creazione
-        create_time = video_dict.get('createTime', 0)
-        try:
-            created_at = datetime.fromtimestamp(int(create_time)).isoformat() if create_time else None
-        except:
-            created_at = None
-        
-        # Pulisci descrizione
-        clean_desc = clean_description(desc, logger)
-        
-        # URL video per transcript
-        video_url = video_info.get('playAddr', '') or video_dict.get('video', {}).get('downloadAddr', '')
-        
-        # ✅ NUOVO: Ottieni transcript se richiesto
-        transcript_data = None
-        if get_transcript and video_url:
-            transcript_data = get_video_transcript(video_url, transcript_language, logger)
-        
-        # ✅ MODIFICATO: Struttura dati con transcript
-        video_data = {
-            'id': video_id,
-            'description': desc,
-            'clean_description': clean_desc,
-            'desc_length': len(clean_desc),
-            'original_desc_length': len(desc),
-            'created_at': created_at,
-            'author_username': author_username,
-            'author_nickname': author_nickname,
-            'author_id': author.get('id', 'unknown'),
-            'duration': duration,
-            'search_type': search_type,
-            'search_term': search_term,
-            'stats': {
-                'views': stats.get('playCount', 0),
-                'likes': stats.get('diggCount', 0),
-                'comments': stats.get('commentCount', 0),
-                'shares': stats.get('shareCount', 0)
-            },
-            'music': {
-                'id': music.get('id', ''),
-                'title': music.get('title', ''),
-                'author': music.get('authorName', '')
-            },
-            'hashtags': extract_hashtags_from_desc(desc),
-            'video_url': video_url,
-            'cover_url': video_info.get('cover', ''),
-            'meaningful_content': True,
-            'filter_applied': True,
-            'min_desc_length_used': 10,  # Verrà aggiornato
-            # ✅ NUOVO: Campi transcript
-            'transcript': transcript_data,
-            'transcript_available': bool(transcript_data),
-            'transcript_text': transcript_data.get('text') if transcript_data else None,
-            'transcript_language': transcript_data.get('language') if transcript_data else None
-        }
-        
-        return video_data
-        
-    except Exception as e:
-        logger.warning(f"⚠️  Errore estrazione dati video: {e}")
-        return {
-            'id': 'error',
-            'description': '',
-            'clean_description': '',
-            'transcript': None,
-            'transcript_available': False,
-            'error': str(e)
-        }
-
-def extract_hashtags_from_desc(description):
-    """Estrae hashtag dalla descrizione"""
-    try:
-        hashtags = re.findall(r'#(\w+)', description)
-        return hashtags
-    except:
-        return []
+# ================================
+# FUNZIONI SALVATAGGIO E SUMMARY
+# ================================
 
 def save_videos(videos, search_type, search_term, args, logger):
     """Salva video in JSON con nome incrementale"""
@@ -948,7 +1027,7 @@ def save_videos(videos, search_type, search_term, args, logger):
         return None
     
     try:
-        # ✅ NUOVO: Funzione per nome file incrementale
+        # Funzione per nome file incrementale
         def get_next_filename(output_dir, prefix="tiktok_scraper", extension=".json"):
             """Trova il prossimo numero disponibile per il file"""
             counter = 1
@@ -958,7 +1037,7 @@ def save_videos(videos, search_type, search_term, args, logger):
                     return filename, counter
                 counter += 1
         
-        # ✅ NUOVO: Nome file incrementale
+        # Nome file incrementale
         base_prefix = args.output_prefix if args.output_prefix else "tiktok_scraper"
         filename, file_number = get_next_filename(args.output_dir, base_prefix)
         
@@ -967,58 +1046,21 @@ def save_videos(videos, search_type, search_term, args, logger):
         total_views = sum(video.get('stats', {}).get('views', 0) for video in videos)
         total_likes = sum(video.get('stats', {}).get('likes', 0) for video in videos)
         
-        # ✅ NUOVO: Statistiche transcript
+        # Statistiche transcript
         videos_with_transcript = sum(1 for video in videos if video.get('transcript_available'))
         total_transcript_chars = sum(len(video.get('transcript_text', '') or '') for video in videos)
         
-        # Hashtag più frequenti
-        all_hashtags = []
-        for video in videos:
-            all_hashtags.extend(video.get('hashtags', []))
+        # ✅ NUOVO: Statistiche commenti
+        videos_with_comments = sum(1 for video in videos if video.get('comments_retrieved'))
+        total_comments = sum(video.get('comments_count', 0) for video in videos)
         
-        hashtag_freq = {}
-        for hashtag in all_hashtags:
-            hashtag_freq[hashtag] = hashtag_freq.get(hashtag, 0) + 1
-        
-        top_hashtags = dict(sorted(hashtag_freq.items(), key=lambda x: x[1], reverse=True)[:10])
-        
-        # ✅ MODIFICATO: Prepara i dati da salvare con transcript
+        # ✅ SEMPLIFICATO: Metadata essenziali
         data = {
             'metadata': {
                 'search_type': search_type,
                 'search_term': search_term,
                 'collection_time': datetime.now().isoformat(),
-                'total_videos': len(videos),
-                'script_version': 'tiktok_scraper_v1.1_with_transcript',
-                'filters_applied': {
-                    'content_filter_applied': not args.no_filter,
-                    'min_desc_length': args.min_desc_length,
-                    'min_duration': args.min_duration,
-                    'max_duration': args.max_duration,
-                    'min_views': args.min_views
-                },
-                'transcript_config': {
-                    'transcript_enabled': args.add_transcript,
-                    'transcript_language': args.transcript_language,
-                    'videos_with_transcript': videos_with_transcript,
-                    'transcript_success_rate': round((videos_with_transcript / len(videos)) * 100, 1) if videos else 0
-                },
-                'output_info': {
-                    'directory': args.output_dir,
-                    'prefix': args.output_prefix,
-                    'filename': filename
-                },
-                'statistics': {
-                    'total_duration_seconds': total_duration,
-                    'average_duration': round(total_duration / len(videos), 1) if videos else 0,
-                    'total_views': total_views,
-                    'total_likes': total_likes,
-                    'average_views': round(total_views / len(videos), 1) if videos else 0,
-                    'top_hashtags': top_hashtags,
-                    'total_hashtags_found': len(set(all_hashtags)),
-                    'total_transcript_characters': total_transcript_chars,
-                    'average_transcript_length': round(total_transcript_chars / videos_with_transcript, 1) if videos_with_transcript else 0
-                }
+                'total_videos': len(videos)
             },
             'videos': videos
         }
@@ -1028,14 +1070,14 @@ def save_videos(videos, search_type, search_term, args, logger):
             json.dump(data, f, indent=2, ensure_ascii=False, default=str)
         
         logger.info(f"💾 File salvato con successo: {filename}")
-        logger.info(f"📊 Statistiche salvate:")
-        logger.info(f"   - Video totali: {len(videos)}")
-        logger.info(f"   - Durata totale: {total_duration} secondi")
-        logger.info(f"   - Visualizzazioni totali: {total_views:,}")
-        logger.info(f"   - Like totali: {total_likes:,}")
+        logger.info(f"📊 Video salvati: {len(videos)}")
+        
         if args.add_transcript:
             logger.info(f"   - Video con transcript: {videos_with_transcript}/{len(videos)}")
-            logger.info(f"   - Caratteri transcript: {total_transcript_chars:,}")
+            
+        if args.add_comments:
+            logger.info(f"   - Video con commenti: {videos_with_comments}/{len(videos)}")
+            logger.info(f"   - Commenti totali: {total_comments:,}")
         
         return filename
         
@@ -1044,7 +1086,7 @@ def save_videos(videos, search_type, search_term, args, logger):
         return None
 
 def print_summary(videos, search_type, search_term, logger):
-    """Stampa riassunto dettagliato dei video raccolti (simile a print_summary)"""
+    """Stampa riassunto dettagliato dei video raccolti"""
     if not videos:
         return
     
@@ -1061,7 +1103,13 @@ def print_summary(videos, search_type, search_term, logger):
         logger.info(f"⏱️  Durata totale: {total_duration} secondi ({total_duration/60:.1f} minuti)")
         logger.info(f"👀 Visualizzazioni totali: {total_views:,}")
         
-        # ✅ NUOVO: Statistiche transcript
+        # Statistiche rilevanza
+        relevant_videos = sum(1 for video in videos if video.get('is_relevant', False))
+        avg_relevance = sum(video.get('relevance_score', 0) for video in videos) / total_videos if total_videos else 0
+        logger.info(f"🎯 Video rilevanti: {relevant_videos}/{total_videos} ({(relevant_videos/total_videos)*100:.1f}%)")
+        logger.info(f"📊 Rilevanza media: {avg_relevance:.3f}")
+        
+        # Statistiche transcript
         videos_with_transcript = sum(1 for video in videos if video.get('transcript_available'))
         if videos_with_transcript > 0:
             logger.info(f"🎙️  Video con transcript: {videos_with_transcript}/{total_videos} ({(videos_with_transcript/total_videos)*100:.1f}%)")
@@ -1070,9 +1118,14 @@ def print_summary(videos, search_type, search_term, logger):
             avg_transcript_length = total_transcript_chars / videos_with_transcript if videos_with_transcript else 0
             logger.info(f"📝 Lunghezza media transcript: {avg_transcript_length:.0f} caratteri")
         
-        # Statistiche descrizioni
-        avg_desc_length = sum(video.get('desc_length', 0) for video in videos) / total_videos
-        logger.info(f"📏 Lunghezza media descrizione: {avg_desc_length:.1f} caratteri")
+        # ✅ NUOVO: Statistiche commenti
+        videos_with_comments = sum(1 for video in videos if video.get('comments_retrieved'))
+        if videos_with_comments > 0:
+            total_comments = sum(video.get('comments_count', 0) for video in videos)
+            avg_comments = total_comments / videos_with_comments if videos_with_comments else 0
+            logger.info(f"💬 Video con commenti: {videos_with_comments}/{total_videos} ({(videos_with_comments/total_videos)*100:.1f}%)")
+            logger.info(f"💭 Commenti totali: {total_comments}")
+            logger.info(f"📈 Media commenti per video: {avg_comments:.1f}")
         
         # Top 3 video più visti
         top_videos = sorted(videos, key=lambda x: x.get('stats', {}).get('views', 0), reverse=True)[:3]
@@ -1081,41 +1134,30 @@ def print_summary(videos, search_type, search_term, logger):
         for i, video in enumerate(top_videos):
             views = video.get('stats', {}).get('views', 0)
             author = video.get('author_username', 'unknown')
-            desc_preview = video.get('clean_description', '')[:60] + "..." if len(video.get('clean_description', '')) > 60 else video.get('clean_description', '')
+            desc_preview = video.get('description', '')[:60] + "..." if len(video.get('description', '')) > 60 else video.get('description', '')
+            relevance = video.get('relevance_score', 0)
             transcript_status = "🎙️" if video.get('transcript_available') else "❌"
-            logger.info(f"{i+1}. ({views:,} views) @{author} {transcript_status}: {desc_preview}")
-        
-        # Filtri applicati
-        sample_video = videos[0] if videos else {}
-        filters_applied = []
-        
-        if sample_video.get('filter_applied', True):
-            filters_applied.append(f"Descrizione significativa")
-        else:
-            filters_applied.append("Descrizione: NESSUN FILTRO")
-        
-        filters_applied.append(f"Ricerca: {search_type}")
-        
-        if videos_with_transcript > 0:
-            filters_applied.append("Transcript: ATTIVO")
-        
-        logger.info(f"🎯 Filtri applicati: {', '.join(filters_applied)}")
+            comments_status = f"💬{video.get('comments_count', 0)}" if video.get('comments_retrieved') else "❌"
+            logger.info(f"{i+1}. ({views:,} views) @{author} [R:{relevance:.2f}] {transcript_status} {comments_status}: {desc_preview}")
         
     except Exception as e:
         logger.error(f"⚠️  Errore nel riassunto: {e}")
 
+# ================================
+# FUNZIONE PRINCIPALE
+# ================================
+
 async def main():
-    """Funzione principale - TikTok Scraper con Transcript"""
+    """Funzione principale - TikTok Scraper Completo"""
     # Parse argomenti
     args = parse_arguments()
     
     # Setup logger
     logger = setup_logger(args.log_level)
     
-    logger.info("🎵 TIKTOK SCRAPER - v1.1")
-    logger.info("🎯 Pattern simile a Twitter scraper")
+    logger.info("🎵 TIKTOK SCRAPER - v2.0 COMPLETO")
+    logger.info("🎯 Features: Rilevanza, Commenti, Transcript")
     logger.info("🔧 Basato su TikTok-Api (davidteather)")
-    logger.info("🎙️  Con supporto transcript RapidAPI")
     logger.info("=" * 60)
     
     # Dry run check
@@ -1125,7 +1167,11 @@ async def main():
         logger.info(f"   - Target: {args.hashtag or args.user or 'trending' if args.trending else 'N/A'}")
         logger.info(f"   - Count: {args.count}")
         logger.info(f"   - Filtri: {'DISATTIVATI' if args.no_filter else 'ATTIVI'}")
+        logger.info(f"   - Soglia rilevanza: {args.relevance_threshold}")
         logger.info(f"   - Transcript: {'ATTIVO' if args.add_transcript else 'DISATTIVO'}")
+        logger.info(f"   - Commenti: {'ATTIVO' if args.add_comments else 'DISATTIVO'}")
+        if args.add_comments:
+            logger.info(f"   - Max commenti: {args.max_comments}")
         logger.info(f"   - Output: {args.output_dir}/{args.output_prefix}...")
         logger.info("✅ Configurazione valida! Rimuovi --dry-run per eseguire.")
         return
@@ -1134,7 +1180,7 @@ async def main():
         # 1. Ottieni MS Token
         ms_token = get_ms_token(args, logger)
         
-        # ✅ NUOVO: Controllo API key transcript
+        # 2. Controllo API key transcript
         if args.add_transcript:
             rapidapi_key = os.environ.get('RAPIDAPI_KEY') or os.environ.get('TIKTOK_TRANSCRIPT_API_KEY')
             if rapidapi_key:
@@ -1144,7 +1190,7 @@ async def main():
                 logger.warning("⚠️  Continuo senza transcript")
                 args.add_transcript = False
         
-        # 2. Determina modalità di ricerca
+        # 3. Determina modalità di ricerca
         search_type = None
         search_term = None
         
@@ -1194,22 +1240,28 @@ async def main():
                 logger.error("❌ Modalità --auto richiede --hashtag, --user o --trending!")
                 sys.exit(1)
         
-        # 3. Log configurazione finale
+        # 4. Log configurazione finale
         logger.info(f"🎯 Configurazione finale:")
         logger.info(f"   - Modalità: {search_type}")
         logger.info(f"   - Target: {search_term}")
         logger.info(f"   - Quantità: {args.count} video")
         logger.info(f"   - Browser: {args.browser}")
+        logger.info(f"   - Soglia rilevanza: {args.relevance_threshold}")
         
         filter_status = "DISATTIVATI" if args.no_filter else f"ATTIVI (min {args.min_desc_length} char)"
         logger.info(f"   - Filtri contenuto: {filter_status}")
         
-        # ✅ NUOVO: Log configurazione transcript
         if args.add_transcript:
             logger.info(f"   - Transcript: ATTIVO (lingua: {args.transcript_language})")
             logger.info(f"   - ⚠️  Tempo elaborazione: +10-30s per video")
         else:
             logger.info(f"   - Transcript: DISATTIVO")
+            
+        if args.add_comments:
+            logger.info(f"   - Commenti: ATTIVO (max {args.max_comments} per video)")
+            logger.info(f"   - ⚠️  Tempo elaborazione: +5-15s per video")
+        else:
+            logger.info(f"   - Commenti: DISATTIVO")
         
         if args.min_duration or args.max_duration:
             duration_filter = f"Durata: {args.min_duration or 0}-{args.max_duration or '∞'}s"
@@ -1220,7 +1272,7 @@ async def main():
         
         logger.info(f"   - Output: {args.output_dir}/{args.output_prefix}...")
         
-        # 4. Crea TikTok API session
+        # 5. Crea TikTok API session
         logger.info("🔧 Inizializzazione TikTok API...")
         
         async with TikTokApi() as api:
@@ -1256,7 +1308,7 @@ async def main():
                 logger.info("   - Controlla connessione internet")
                 sys.exit(1)
             
-            # 5. Esegui ricerca in base alla modalità
+            # 6. Esegui ricerca in base alla modalità
             videos = []
             
             if search_type == 'hashtag':
@@ -1265,11 +1317,6 @@ async def main():
                 videos = await search_user_videos(api, search_term, args.count, args, logger)
             elif search_type == 'trending':
                 videos = await search_trending_videos(api, args.count, args, logger)
-            
-            # 6. Aggiorna metadati filtri nei video
-            for video in videos:
-                video['filter_applied'] = not args.no_filter
-                video['min_desc_length_used'] = args.min_desc_length
             
             # 7. Salva e mostra risultati
             if videos:
@@ -1280,10 +1327,15 @@ async def main():
                 logger.info(f"📁 File: {filename}")
                 logger.info(f"📊 Video TikTok raccolti: {len(videos)}")
                 
-                # ✅ NUOVO: Messaggi specifici per transcript
+                # Messaggi specifici per features
                 if args.add_transcript:
                     transcript_count = sum(1 for v in videos if v.get('transcript_available'))
                     logger.info(f"🎙️  Transcript ottenuti: {transcript_count}/{len(videos)}")
+                
+                if args.add_comments:
+                    comments_count = sum(1 for v in videos if v.get('comments_retrieved'))
+                    total_comments = sum(v.get('comments_count', 0) for v in videos)
+                    logger.info(f"💬 Commenti ottenuti: {comments_count}/{len(videos)} video ({total_comments} commenti totali)")
                 
                 # Messaggi specifici per modalità
                 if search_type == 'hashtag':
@@ -1292,10 +1344,6 @@ async def main():
                     logger.info(f"👤 Profilo @{search_term} analizzato")
                 elif search_type == 'trending':
                     logger.info("🔥 Video trending analizzati")
-                
-                # Info download video
-                if args.download_videos:
-                    logger.info("📥 Download video abilitato (funzionalità futura)")
                 
             else:
                 # Messaggi di errore informativi
@@ -1313,6 +1361,7 @@ async def main():
                     logger.info("   - I trending potrebbero essere limitati geograficamente")
                 
                 if not args.no_filter:
+                    logger.info(f"   - Abbassa soglia rilevanza: --relevance-threshold 0.3 (ora: {args.relevance_threshold})")
                     logger.info(f"   - Abbassa soglia: --min-desc-length 5 (ora: {args.min_desc_length})")
                     logger.info("   - Disabilita filtri: --no-filter")
                 
