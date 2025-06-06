@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
 """
-Twitter Scraper - Versione Refactorizzata
-Usa moduli core per eliminare duplicazioni
+Script per raccogliere tweet per hashtag usando Twitter API v2
+STEP 3+: Versione migliorata con date + opzioni avanzate
 """
 
 import os
 import json
+import re
+import logging
+import argparse
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
-# ✅ IMPORT DAI MODULI CORE (sostituiscono funzioni duplicate)
-from src.core.logger import setup_twitter_logger
-from src.core.text_utils import clean_tweet_text, is_meaningful_text
-from src.core.date_utils import validate_date_arguments
-from src.core.cli_utils import (
-    setup_twitter_argparse, validate_common_arguments, 
-    validate_count_argument, clean_hashtag_input,
-    check_auto_mode_requirements, print_configuration_summary
-)
 
 # Carica le variabili d'ambiente dal file .env
 load_dotenv()
@@ -31,6 +24,270 @@ except ImportError:
     print("Esegui: pip install python-twitter-v2 python-dotenv")
     exit(1)
 
+def setup_logger(log_level="INFO"):
+    """Configura il logger professionale"""
+    # Crea directory logs se non esiste
+    os.makedirs('logs', exist_ok=True)
+    
+    # Configura formato
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Logger principale
+    logger = logging.getLogger('TwitterScraper')
+    logger.setLevel(getattr(logging, log_level.upper()))
+    
+    # Rimuovi handler esistenti per evitare duplicati
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    
+    # Handler console
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    
+    # Handler file
+    log_filename = f"logs/scraper_{datetime.now().strftime('%Y%m%d')}.log"
+    file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    
+    return logger
+
+def parse_arguments():
+    """Configura argparse - Versione ibrida migliorata"""
+    parser = argparse.ArgumentParser(
+        description='Twitter Scraper avanzato con filtri lingua, date e automazione completa',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Esempi di utilizzo:
+  # Comando base
+  %(prog)s --hashtag AI --count 20
+
+  # Con filtri date (max 7 giorni fa per Piano Free)
+  %(prog)s --hashtag AI --count 20 --start-date 2025-06-01 --end-date 2025-06-04
+
+  # Modalità automatica completa
+  %(prog)s --hashtag startup --count 30 --lang it --auto --quiet
+
+  # Debug con tutti i dettagli
+  %(prog)s --hashtag blockchain --count 10 --verbose
+
+  # Senza filtri qualità
+  %(prog)s --hashtag news --count 50 --no-filter --output-prefix "raw_"
+
+  # Test configurazione
+  %(prog)s --hashtag test --dry-run
+        """
+    )
+    
+    # Parametri principali
+    parser.add_argument(
+        '--hashtag', '-h',
+        type=str,
+        help='Hashtag da cercare (senza #). Se non specificato, chiede input (tranne con --auto).'
+    )
+    
+    parser.add_argument(
+        '--count', '-n',
+        type=int,
+        default=20,
+        help='Numero tweet da raccogliere (default: 20, min: 10, max: 500)'
+    )
+    
+    # ✅ MIGLIORAMENTO: Filtri temporali con validazione migliorata
+    parser.add_argument(
+        '--start-date',
+        type=str,
+        help='Data inizio ricerca (OPZIONALE, formato: YYYY-MM-DD). Piano Free: max 7 giorni fa'
+    )
+    
+    parser.add_argument(
+        '--end-date', 
+        type=str,
+        help='Data fine ricerca (OPZIONALE, formato: YYYY-MM-DD). Default: oggi'
+    )
+    
+    parser.add_argument(
+        '--last-days',
+        type=int,
+        help='Alternativa alle date: cerca negli ultimi N giorni (max 7 per Piano Free)'
+    )
+    
+    # Configurazione lingua e filtri
+    parser.add_argument(
+        '--lang', '-l',
+        type=str,
+        default='it',
+        choices=['it', 'en', 'es', 'fr', 'de', 'pt', 'ja', 'ko', 'ar'],
+        help='Lingua tweet (default: it per italiano)'
+    )
+    
+    # ✅ MIGLIORAMENTO: Controllo filtri più granulare
+    parser.add_argument(
+        '--no-filter',
+        action='store_true',
+        help='Disabilita filtro contenuto significativo (mantiene tutti i tweet)'
+    )
+    
+    parser.add_argument(
+        '--min-text-length',
+        type=int,
+        default=10,
+        help='Lunghezza minima testo significativo (default: 10 caratteri)'
+    )
+    
+    # Output e logging
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        default='data',
+        help='Directory output per file JSON (default: data/)'
+    )
+    
+    parser.add_argument(
+        '--output-prefix',
+        type=str,
+        default='',
+        help='Prefisso per nome file. Es: "daily_" → daily_hashtag_timestamp.json'
+    )
+    
+    parser.add_argument(
+        '--log-level',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+        default='INFO',
+        help='Livello di logging (default: INFO)'
+    )
+    
+    # ✅ MIGLIORAMENTO: Modalità verbose/quiet come nella mia versione
+    parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        help='Modalità silenziosa: mostra solo errori'
+    )
+    
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Modalità verbosa: mostra dettagli (equivale a --log-level DEBUG)'
+    )
+    
+    # Modalità speciali
+    parser.add_argument(
+        '--auto',
+        action='store_true',
+        help='Modalità automatica: non chiede input utente (richiede --hashtag)'
+    )
+    
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Test configurazione senza eseguire ricerca vera'
+    )
+    
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='TwitterScraper Step 3+ - Versione ibrida avanzata'
+    )
+    
+    args = parser.parse_args()
+    
+    # ✅ MIGLIORAMENTO: Validazione e correzioni più robuste
+    
+    # Gestione conflitti verbosity
+    if args.quiet and args.verbose:
+        parser.error("❌ Non puoi usare --quiet e --verbose insieme!")
+    
+    if args.verbose:
+        args.log_level = 'DEBUG'
+    elif args.quiet:
+        args.log_level = 'ERROR'
+    
+    # Validazione hashtag in modalità auto
+    if args.auto and not args.hashtag:
+        parser.error("❌ Modalità --auto richiede --hashtag specificato!")
+    
+    # Pulizia hashtag
+    if args.hashtag:
+        args.hashtag = args.hashtag.lstrip('#').strip()
+        if not args.hashtag:
+            parser.error("❌ Hashtag non può essere vuoto!")
+    
+    # Validazione count
+    if args.count < 10 or args.count > 500:
+        parser.error(f"❌ Count deve essere tra 10 e 500 (ricevuto: {args.count})")
+    
+    # Validazione date conflittuali
+    if args.last_days and (args.start_date or args.end_date):
+        parser.error("❌ Non usare --last-days insieme a --start-date/--end-date!")
+    
+    if args.last_days and (args.last_days < 1 or args.last_days > 7):
+        parser.error("❌ --last-days deve essere tra 1 e 7 (Piano Free)")
+    
+    # Validazione directory output
+    try:
+        os.makedirs(args.output_dir, exist_ok=True)
+    except Exception as e:
+        parser.error(f"❌ Impossibile creare directory {args.output_dir}: {e}")
+    
+    return args
+
+def validate_dates(start_date_str, end_date_str, logger):
+    """Valida e converte le date in formato ISO per Twitter API"""
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        
+        # Se end_date non specificata, usa oggi
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        else:
+            end_date = datetime.now()
+            logger.info(f"📅 End date non specificata, uso oggi: {end_date.strftime('%Y-%m-%d')}")
+        
+        if start_date >= end_date:
+            raise ValueError("Data inizio deve essere precedente a data fine")
+        
+        # ✅ MIGLIORAMENTO: Controllo Piano Free più preciso
+        today = datetime.now()
+        days_back = (today - start_date).days
+        
+        if days_back > 7:
+            logger.warning(f"⚠️  Data inizio {days_back} giorni fa")
+            logger.warning("⚠️  Piano Free Twitter limitato a ~7 giorni - possibili errori API")
+            logger.info("💡 Suggerimento: usa date più recenti o Piano Basic")
+        
+        # Converte in formato ISO per Twitter API
+        start_iso = start_date.strftime('%Y-%m-%dT00:00:00Z')
+        end_iso = end_date.strftime('%Y-%m-%dT23:59:59Z')
+        
+        logger.info(f"📅 Filtro date validato: {start_date.strftime('%Y-%m-%d')} - {end_date.strftime('%Y-%m-%d')}")
+        
+        return start_iso, end_iso
+        
+    except ValueError as e:
+        logger.error(f"❌ Errore formato date: {e}")
+        logger.info("💡 Formato richiesto: YYYY-MM-DD (es: 2025-06-01)")
+        return None, None
+
+def process_last_days_filter(last_days, logger):
+    """Converte --last-days in start_time/end_time"""
+    try:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=last_days)
+        
+        start_iso = start_date.strftime('%Y-%m-%dT00:00:00Z')
+        end_iso = end_date.strftime('%Y-%m-%dT23:59:59Z')
+        
+        logger.info(f"📅 Filtro ultimi {last_days} giorni: {start_date.strftime('%Y-%m-%d')} - {end_date.strftime('%Y-%m-%d')}")
+        
+        return start_iso, end_iso
+        
+    except Exception as e:
+        logger.error(f"❌ Errore calcolo date: {e}")
+        return None, None
 
 def check_credentials(logger):
     """Verifica che tutte le credenziali siano configurate"""
@@ -57,7 +314,6 @@ def check_credentials(logger):
     logger.info("✅ Tutte le credenziali sono configurate!")
     return True
 
-
 def create_twitter_client(logger):
     """Crea client Twitter semplificato"""
     try:
@@ -70,6 +326,38 @@ def create_twitter_client(logger):
         logger.error(f"❌ Errore creazione client: {e}")
         return None
 
+def clean_tweet_text(text, logger):
+    """Rimuove link ma mantiene il resto"""
+    try:
+        # Rimuove link https://t.co/...
+        text = re.sub(r'https://t\.co/\w+', '', text)
+        # Rimuove spazi multipli
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+    except Exception as e:
+        logger.warning(f"⚠️  Errore pulizia testo: {e}")
+        return text
+
+def is_meaningful_text(clean_text, hashtag, min_length, logger):
+    """Decide se il tweet ha abbastanza contenuto testuale"""
+    try:
+        # Rimuovi l'hashtag stesso per contare il resto
+        text_without_hashtag = clean_text.replace(f"#{hashtag}", "").replace(f"#{hashtag.lower()}", "")
+        text_without_hashtag = text_without_hashtag.strip()
+        
+        # Criteri per tweet "significativo"
+        if len(text_without_hashtag) < min_length:
+            return False
+        
+        # Se è solo hashtag e simboli/emoji
+        if re.match(r'^[#@\s\W]*$', text_without_hashtag):
+            return False
+        
+        return True
+        
+    except Exception as e:
+        logger.warning(f"⚠️  Errore valutazione testo: {e}")
+        return True  # In caso di errore, mantieni il tweet
 
 def search_hashtag(api, hashtag, max_results=10, lang='it', start_time=None, end_time=None, 
                   enable_filter=True, min_text_length=10, logger=None):
@@ -132,10 +420,10 @@ def search_hashtag(api, hashtag, max_results=10, lang='it', start_time=None, end
         
         for tweet in response.data:
             try:
-                # ✅ USA MODULO CORE per pulizia testo
+                # Pulisci il testo dai link
                 clean_text = clean_tweet_text(tweet.text, logger)
                 
-                # ✅ USA MODULO CORE per valutazione significatività
+                # Verifica se c'è abbastanza contenuto testuale utile
                 if not enable_filter or is_meaningful_text(clean_text, hashtag, min_text_length, logger):
                     author_info = users_dict.get(tweet.author_id, {})
                     
@@ -182,7 +470,7 @@ def search_hashtag(api, hashtag, max_results=10, lang='it', start_time=None, end
         error_str = str(e)
         logger.error(f"❌ Errore ricerca #{hashtag}: {e}")
         
-        # Gestione errori dettagliata
+        # ✅ MIGLIORAMENTO: Gestione errori più dettagliata
         if "429" in error_str:
             logger.error("🚫 Rate limit raggiunto")
             logger.info("💡 Suggerimenti:")
@@ -205,44 +493,64 @@ def search_hashtag(api, hashtag, max_results=10, lang='it', start_time=None, end
         
         return []
 
-
 def save_tweets(tweets, hashtag, output_dir, output_prefix, logger):
-    """Salva tweet in formato JSONL - Una riga per tweet"""
+    """Salva tweet in JSON con metadati estesi"""
     if not tweets:
         logger.warning("⚠️  Nessun tweet da salvare")
         return None
     
     try:
-        # Nome file con timestamp e estensione .jsonl
+        # Nome file con timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{output_dir}/{output_prefix}{hashtag}_{timestamp}.jsonl"
+        filename = f"{output_dir}/{output_prefix}{hashtag}_{timestamp}.json"
         
-        # Aggiungi metadati di collezione
-        collection_time = datetime.now().isoformat()
-        
-        # Salva in formato JSONL - una riga per tweet
-        with open(filename, 'w', encoding='utf-8') as f:
-            for tweet in tweets:
-                # Aggiungi metadati di collezione a ogni tweet
-                tweet_with_metadata = tweet.copy()
-                tweet_with_metadata.update({
-                    'collection_time': collection_time,
-                    'search_term': hashtag,
-                    'platform': 'twitter'
-                })
-                
-                # Scrivi una riga JSON per tweet (formato JSONL)
-                json_line = json.dumps(tweet_with_metadata, ensure_ascii=False, default=str)
-                f.write(json_line + '\n')
-        
-        # Calcola statistiche per log (come prima)
+        # Statistiche sui tweet
         total_original_chars = sum(tweet['original_length'] for tweet in tweets)
         total_clean_chars = sum(tweet['text_length'] for tweet in tweets)
         tweets_with_links = sum(1 for tweet in tweets if tweet['has_links'])
+        languages = {}
         
-        logger.info(f"💾 File JSONL salvato con successo: {filename}")
-        logger.info(f"📊 Tweet salvati: {len(tweets)} (una riga per tweet)")
-        logger.info(f"📊 Statistiche:")
+        for tweet in tweets:
+            lang = tweet.get('lang', 'unknown')
+            languages[lang] = languages.get(lang, 0) + 1
+        
+        # ✅ MIGLIORAMENTO: Metadati più completi
+        data = {
+            'metadata': {
+                'hashtag': hashtag,
+                'collection_time': datetime.now().isoformat(),
+                'total_tweets': len(tweets),
+                'script_version': 'step3_plus_hybrid',
+                'filters_applied': {
+                    'language_filter': tweets[0].get('language_filter', 'it') if tweets else 'it',
+                    'date_filter_applied': tweets[0].get('date_filter_applied', False) if tweets else False,
+                    'content_filter_applied': tweets[0].get('content_filter_applied', True) if tweets else True,
+                    'min_text_length': tweets[0].get('min_text_length_used', 10) if tweets else 10,
+                    'exclude_retweets': True
+                },
+                'output_info': {
+                    'directory': output_dir,
+                    'prefix': output_prefix,
+                    'filename': filename
+                },
+                'statistics': {
+                    'total_original_characters': total_original_chars,
+                    'total_clean_characters': total_clean_chars,
+                    'tweets_with_links': tweets_with_links,
+                    'tweets_text_only': len(tweets) - tweets_with_links,
+                    'average_text_length': round(total_clean_chars / len(tweets), 1),
+                    'languages': languages
+                }
+            },
+            'tweets': tweets
+        }
+        
+        # Salva in JSON
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+        
+        logger.info(f"💾 File salvato con successo: {filename}")
+        logger.info(f"📊 Statistiche salvate:")
         logger.info(f"   - Tweet totali: {len(tweets)}")
         logger.info(f"   - Con link: {tweets_with_links}")
         logger.info(f"   - Solo testo: {len(tweets) - tweets_with_links}")
@@ -253,7 +561,6 @@ def save_tweets(tweets, hashtag, output_dir, output_prefix, logger):
     except Exception as e:
         logger.error(f"❌ Errore salvataggio: {e}")
         return None
-
 
 def print_summary(tweets, hashtag, logger):
     """Stampa riassunto dettagliato dei tweet raccolti"""
@@ -293,7 +600,7 @@ def print_summary(tweets, hashtag, logger):
             clean_preview = tweet['clean_text'][:80] + "..." if len(tweet['clean_text']) > 80 else tweet['clean_text']
             logger.info(f"{i+1}. ({tweet['text_length']} char) @{tweet['author_username']}: {clean_preview}")
         
-        # Summary filtri
+        # ✅ MIGLIORAMENTO: Summary filtri più dettagliato
         filters_applied = []
         sample_tweet = tweets[0] if tweets else {}
         
@@ -316,34 +623,32 @@ def print_summary(tweets, hashtag, logger):
     except Exception as e:
         logger.error(f"⚠️  Errore nel riassunto: {e}")
 
-
 def main():
-    """Funzione principale - Twitter Scraper Refactorizzato"""
+    """Funzione principale - STEP 3+ Versione ibrida"""
+    # Parse argomenti con validazione robusta
+    args = parse_arguments()
     
-    # ✅ USA MODULO CORE per argparse
-    parser = setup_twitter_argparse()
-    args = parser.parse_args()
+    # Setup logger
+    logger = setup_logger(args.log_level)
     
-    # ✅ USA MODULO CORE per validazioni comuni
-    args = validate_common_arguments(args, parser)
-    validate_count_argument(args, parser, min_count=10, max_count=500)
-    
-    # ✅ USA MODULO CORE per logger
-    logger = setup_twitter_logger(args.log_level)
-    
-    logger.info("🐦 TWITTER SCRAPER - Versione Refactorizzata")
-    logger.info("🏗️  Usa moduli core comuni")
+    logger.info("🐦 DATARIA SCRAPER - STEP 3+ HYBRID")
+    logger.info("🇮🇹 ✅ Filtro lingua configurabile")
+    logger.info("📝 ✅ Logger professionale")
+    logger.info("⚙️  ✅ Argparse automazione completa")
+    logger.info("📅 ✅ Filtri date avanzati")
+    logger.info("🎯 ✅ Controllo filtri granulare")
     logger.info("=" * 60)
     
     # Dry run check
     if args.dry_run:
         logger.info("🧪 DRY RUN MODE - Test configurazione")
-        extra_info = {
-            'Hashtag': args.hashtag or 'Da richiedere',
-            'Lingua': args.lang,
-            'Date filter': 'ATTIVO' if (args.start_date or args.last_days) else 'default'
-        }
-        print_configuration_summary(args, extra_info)
+        logger.info(f"   - Hashtag: {args.hashtag or 'Da richiedere'}")
+        logger.info(f"   - Count: {args.count}")
+        logger.info(f"   - Lingua: {args.lang}")
+        logger.info(f"   - Date: {args.start_date or 'default'} - {args.end_date or 'default'}")
+        logger.info(f"   - Last days: {args.last_days or 'non usato'}")
+        logger.info(f"   - Filtro contenuto: {'DISATTIVATO' if args.no_filter else 'ATTIVO'}")
+        logger.info(f"   - Output: {args.output_dir}/{args.output_prefix}...")
         logger.info("✅ Configurazione valida! Rimuovi --dry-run per eseguire.")
         return
     
@@ -352,8 +657,26 @@ def main():
         if not check_credentials(logger):
             sys.exit(1)
         
-        # 2. ✅ USA MODULO CORE per gestione filtri temporali
-        start_time, end_time = validate_date_arguments(args, parser, logger)
+        # 2. Gestione filtri temporali
+        start_time, end_time = None, None
+        
+        if args.last_days:
+            start_time, end_time = process_last_days_filter(args.last_days, logger)
+            if not start_time:
+                logger.error("❌ Errore calcolo date da --last-days")
+                sys.exit(1)
+        elif args.start_date and args.end_date:
+            start_time, end_time = validate_dates(args.start_date, args.end_date, logger)
+            if not start_time:
+                logger.error("❌ Date non valide, uscita")
+                sys.exit(1)
+        elif args.start_date and not args.end_date:
+            # Se solo start_date, end_date = oggi
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            start_time, end_time = validate_dates(args.start_date, today_str, logger)
+            if not start_time:
+                logger.error("❌ Start date non valida")
+                sys.exit(1)
         
         # 3. Crea client
         api = create_twitter_client(logger)
@@ -375,8 +698,7 @@ def main():
                 logger.info("💡 Usa: --hashtag NOME o modalità interattiva senza --auto")
             sys.exit(1)
         
-        # ✅ USA MODULO CORE per pulizia hashtag
-        hashtag = clean_hashtag_input(hashtag, parser)
+        hashtag = hashtag.lstrip('#')
         
         # 5. Log configurazione finale
         logger.info(f"🎯 Configurazione finale:")
@@ -435,7 +757,7 @@ def main():
                 logger.info(f"🎯 Con filtro contenuto significativo (min {args.min_text_length} char)")
             
         else:
-            # Messaggi di errore informativi
+            # Messaggi di errore più informativi
             lang_name = {
                 'it': 'italiani', 'en': 'inglesi', 'es': 'spagnoli'
             }.get(args.lang, f'in {args.lang}')
@@ -464,7 +786,6 @@ def main():
         logger.debug(f"🔍 Stack trace completo:", exc_info=True)
         logger.info("🔧 Riprova o controlla la configurazione")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

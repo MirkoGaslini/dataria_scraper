@@ -308,6 +308,19 @@ def setup_tiktok_argparse():
         help='Numero massimo commenti per video (default: 10)'
     )
     
+    parser.add_argument(
+        '--include-replies',
+        action='store_true',
+        help='Includi risposte ai commenti (nested structure)'
+    )
+    
+    parser.add_argument(
+        '--max-replies',
+        type=int,
+        default=3,
+        help='Numero massimo risposte per commento (default: 3)'
+    )
+    
     # Filtri video TikTok
     parser.add_argument(
         '--min-duration',
@@ -379,6 +392,14 @@ def validate_tiktok_arguments(args, parser):
     # Validazione max-comments
     if args.max_comments < 1 or args.max_comments > 50:
         parser.error(f"❌ max-comments deve essere tra 1 e 50 (ricevuto: {args.max_comments})")
+    
+    # Validazione max-replies
+    if args.max_replies < 1 or args.max_replies > 20:
+        parser.error(f"❌ max-replies deve essere tra 1 e 20 (ricevuto: {args.max_replies})")
+    
+    # Validazione include-replies dependency
+    if args.include_replies and not args.add_comments:
+        parser.error("❌ --include-replies richiede --add-comments")
     
     # Validazione relevance-threshold
     if args.relevance_threshold < 0.0 or args.relevance_threshold > 1.0:
