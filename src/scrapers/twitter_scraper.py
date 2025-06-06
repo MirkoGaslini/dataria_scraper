@@ -207,63 +207,42 @@ def search_hashtag(api, hashtag, max_results=10, lang='it', start_time=None, end
 
 
 def save_tweets(tweets, hashtag, output_dir, output_prefix, logger):
-    """Salva tweet in JSON con metadati estesi - FORMATO ORIGINALE ESATTO"""
+    """Salva tweet in formato JSONL - Una riga per tweet"""
     if not tweets:
         logger.warning("⚠️  Nessun tweet da salvare")
         return None
     
     try:
-        # Nome file con timestamp (come originale)
+        # Nome file con timestamp e estensione .jsonl
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{output_dir}/{output_prefix}{hashtag}_{timestamp}.json"
+        filename = f"{output_dir}/{output_prefix}{hashtag}_{timestamp}.jsonl"
         
-        # Statistiche sui tweet (come originale)
+        # Aggiungi metadati di collezione
+        collection_time = datetime.now().isoformat()
+        
+        # Salva in formato JSONL - una riga per tweet
+        with open(filename, 'w', encoding='utf-8') as f:
+            for tweet in tweets:
+                # Aggiungi metadati di collezione a ogni tweet
+                tweet_with_metadata = tweet.copy()
+                tweet_with_metadata.update({
+                    'collection_time': collection_time,
+                    'search_term': hashtag,
+                    'platform': 'twitter'
+                })
+                
+                # Scrivi una riga JSON per tweet (formato JSONL)
+                json_line = json.dumps(tweet_with_metadata, ensure_ascii=False, default=str)
+                f.write(json_line + '\n')
+        
+        # Calcola statistiche per log (come prima)
         total_original_chars = sum(tweet['original_length'] for tweet in tweets)
         total_clean_chars = sum(tweet['text_length'] for tweet in tweets)
         tweets_with_links = sum(1 for tweet in tweets if tweet['has_links'])
-        languages = {}
         
-        for tweet in tweets:
-            lang = tweet.get('lang', 'unknown')
-            languages[lang] = languages.get(lang, 0) + 1
-        
-        # Metadata ESATTE come nel codice originale Twitter
-        data = {
-            'metadata': {
-                'hashtag': hashtag,
-                'collection_time': datetime.now().isoformat(),
-                'total_tweets': len(tweets),
-                'script_version': 'refactored_with_core',
-                'filters_applied': {
-                    'language_filter': tweets[0].get('language_filter', 'it') if tweets else 'it',
-                    'date_filter_applied': tweets[0].get('date_filter_applied', False) if tweets else False,
-                    'content_filter_applied': tweets[0].get('content_filter_applied', True) if tweets else True,
-                    'min_text_length': tweets[0].get('min_text_length_used', 10) if tweets else 10,
-                    'exclude_retweets': True
-                },
-                'output_info': {
-                    'directory': output_dir,
-                    'prefix': output_prefix,
-                    'filename': filename
-                },
-                'statistics': {
-                    'total_original_characters': total_original_chars,
-                    'total_clean_characters': total_clean_chars,
-                    'tweets_with_links': tweets_with_links,
-                    'tweets_text_only': len(tweets) - tweets_with_links,
-                    'average_text_length': round(total_clean_chars / len(tweets), 1),
-                    'languages': languages
-                }
-            },
-            'tweets': tweets  # MANTIENE ESATTAMENTE il formato originale
-        }
-        
-        # Salva in JSON
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
-        
-        logger.info(f"💾 File salvato con successo: {filename}")
-        logger.info(f"📊 Statistiche salvate:")
+        logger.info(f"💾 File JSONL salvato con successo: {filename}")
+        logger.info(f"📊 Tweet salvati: {len(tweets)} (una riga per tweet)")
+        logger.info(f"📊 Statistiche:")
         logger.info(f"   - Tweet totali: {len(tweets)}")
         logger.info(f"   - Con link: {tweets_with_links}")
         logger.info(f"   - Solo testo: {len(tweets) - tweets_with_links}")
