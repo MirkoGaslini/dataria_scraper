@@ -328,6 +328,12 @@ def setup_tiktok_argparse():
     )
     
     parser.add_argument(
+        '--created-after',
+        type=str,
+        help='Filtra video creati dopo questa data (formato: YYYY-MM-DD)'
+    )
+    
+    parser.add_argument(
         '--min-desc-length',
         type=int,
         default=10,
@@ -382,6 +388,14 @@ def validate_tiktok_arguments(args, parser):
     if args.min_duration and args.max_duration:
         if args.min_duration >= args.max_duration:
             parser.error("❌ min-duration deve essere < max-duration")
+    
+    # ✅ NUOVO: Validazione created-after
+    if getattr(args, 'created_after', None):
+        try:
+            from datetime import datetime
+            datetime.strptime(args.created_after, '%Y-%m-%d')
+        except ValueError:
+            parser.error("❌ created-after deve essere in formato YYYY-MM-DD (es: 2025-06-01)")
     
     # Pulizia input
     if args.hashtag:

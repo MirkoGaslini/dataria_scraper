@@ -20,7 +20,7 @@ from src.core.text_utils import (
     is_meaningful_description
 )
 from src.core.cli_utils import (
-    setup_tiktok_argparse, validate_common_arguments,
+    setup_tiktok_argparse, validate_common_arguments, validate_tiktok_arguments,
     validate_count_argument, clean_hashtag_input, clean_username_input,
     check_auto_mode_requirements, print_configuration_summary
 )
@@ -328,7 +328,7 @@ def should_get_comments(args, video_count, logger):
 # ================================
 
 def apply_video_filters(video_data, args, search_term, logger):
-    """Applica filtri ai video (durata, views, descrizione, rilevanza)"""
+    """Applica filtri ai video (durata, views, descrizione, data creazione)"""
     try:
         # Filtro durata
         duration = video_data.get('duration', 0)
@@ -347,6 +347,27 @@ def apply_video_filters(video_data, args, search_term, logger):
             logger.debug(f"🗑️  Video {video_data.get('id')} scartato: views {views} < {args.min_views}")
             return False
         
+        # ✅ NUOVO: Filtro data creazione
+        if getattr(args, 'created_after', None):
+            try:
+                from datetime import datetime
+                video_created_at = video_data.get('created_at')
+                if video_created_at:
+                    # Parse della data del video (formato ISO)
+                    video_date = datetime.fromisoformat(video_created_at.replace('Z', '+00:00'))
+                    # Parse della data filtro
+                    filter_date = datetime.strptime(args.created_after, '%Y-%m-%d')
+                    
+                    if video_date.date() <= filter_date.date():
+                        logger.debug(f"🗑️  Video {video_data.get('id')} scartato: creato {video_date.date()} <= {filter_date.date()}")
+                        return False
+                else:
+                    logger.debug(f"🗑️  Video {video_data.get('id')} scartato: data creazione mancante")
+                    return False
+            except Exception as e:
+                logger.warning(f"⚠️  Errore filtro data per video {video_data.get('id')}: {e}")
+                # In caso di errore nella data, mantieni il video
+        
         # Filtro descrizione (se abilitato)
         if not args.no_filter:
             desc = video_data.get('description', '')
@@ -358,12 +379,8 @@ def apply_video_filters(video_data, args, search_term, logger):
                 logger.debug(f"🗑️  Video {video_data.get('id')} scartato: descrizione non significativa")
                 return False
         
-        # Filtro rilevanza
-        is_relevant = video_data.get('is_relevant', True)
-        if not is_relevant:
-            relevance_score = video_data.get('relevance_score', 0.0)
-            logger.debug(f"🗑️  Video {video_data.get('id')} scartato: rilevanza {relevance_score:.3f} < {args.relevance_threshold}")
-            return False
+        # ✅ FILTRO RILEVANZA RIMOSSO - Calcolo mantenuto ma non filtra più
+        # Il relevance_score rimane come metadata per future query DB
         
         return True
         
@@ -706,14 +723,14 @@ async def search_trending_videos(api, count, args, logger):
 # ================================
 
 def save_videos(videos, search_type, search_term, args, logger):
-    """Salva video in JSON con nome incrementale - FORMATO ORIGINALE ESATTO"""
+    """Salva video in formato JSONL - Una riga per video"""
     if not videos:
         logger.warning("⚠️  Nessun video da salvare")
         return None
     
     try:
         # Funzione per nome file incrementale (come originale)
-        def get_next_filename(output_dir, prefix="tiktok_scraper", extension=".json"):
+        def get_next_filename(output_dir, prefix="tiktok_scraper", extension=".jsonl"):
             """Trova il prossimo numero disponibile per il file"""
             counter = 1
             while True:
@@ -722,27 +739,30 @@ def save_videos(videos, search_type, search_term, args, logger):
                     return filename, counter
                 counter += 1
         
-        # Nome file incrementale
+        # Nome file incrementale con estensione .jsonl
         base_prefix = args.output_prefix if args.output_prefix else "tiktok_scraper"
         filename, file_number = get_next_filename(args.output_dir, base_prefix)
         
-        # Metadata ESATTE come nel codice originale TikTok (semplificata)
-        data = {
-            'metadata': {
-                'search_type': search_type,
-                'search_term': search_term,
-                'collection_time': datetime.now().isoformat(),
-                'total_videos': len(videos)
-            },
-            'videos': videos  # MANTIENE ESATTAMENTE il formato originale TikTok
-        }
+        # Aggiungi metadati a ogni video per tracciabilità
+        collection_time = datetime.now().isoformat()
         
-        # Salva in JSON
+        # Salva in formato JSONL - una riga per video
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            for video in videos:
+                # Aggiungi metadati di collezione a ogni video
+                video_with_metadata = video.copy()
+                video_with_metadata.update({
+                    'collection_time': collection_time,
+                    'search_type': search_type,
+                    'search_term': search_term
+                })
+                
+                # Scrivi una riga JSON per video (formato JSONL)
+                json_line = json.dumps(video_with_metadata, ensure_ascii=False, default=str)
+                f.write(json_line + '\n')
         
-        logger.info(f"💾 File salvato con successo: {filename}")
-        logger.info(f"📊 Video salvati: {len(videos)}")
+        logger.info(f"💾 File JSONL salvato con successo: {filename}")
+        logger.info(f"📊 Video salvati: {len(videos)} (una riga per video)")
         
         if args.add_transcript:
             transcript_count = sum(1 for video in videos if video.get('transcript_available'))
@@ -779,10 +799,10 @@ def print_summary(videos, search_type, search_term, logger):
         logger.info(f"⏱️  Durata totale: {total_duration} secondi ({total_duration/60:.1f} minuti)")
         logger.info(f"👀 Visualizzazioni totali: {total_views:,}")
         
-        # Statistiche rilevanza
+        # Statistiche rilevanza (solo per info, non più filtrate)
         relevant_videos = sum(1 for video in videos if video.get('is_relevant', False))
         avg_relevance = sum(video.get('relevance_score', 0) for video in videos) / total_videos if total_videos else 0
-        logger.info(f"🎯 Video rilevanti: {relevant_videos}/{total_videos} ({(relevant_videos/total_videos)*100:.1f}%)")
+        logger.info(f"🎯 Video rilevanti: {relevant_videos}/{total_videos} ({(relevant_videos/total_videos)*100:.1f}%) [INFO ONLY - Non filtrato]")
         logger.info(f"📊 Rilevanza media: {avg_relevance:.3f}")
         
         # Statistiche transcript
@@ -831,8 +851,9 @@ async def main():
     parser = setup_tiktok_argparse()
     args = parser.parse_args()
     
-    # ✅ USA MODULO CORE per validazioni comuni
+    # ✅ USA MODULO CORE per validazioni comuni e TikTok-specifiche
     args = validate_common_arguments(args, parser)
+    args = validate_tiktok_arguments(args, parser)
     validate_count_argument(args, parser, min_count=5, max_count=100)
     
     # ✅ USA MODULO CORE per logger
@@ -853,7 +874,8 @@ async def main():
             'Target': target,
             'Transcript': 'ATTIVO' if args.add_transcript else 'DISATTIVO',
             'Commenti': 'ATTIVO' if args.add_comments else 'DISATTIVO',
-            'Soglia rilevanza': args.relevance_threshold
+            'Soglia rilevanza': f"{args.relevance_threshold} (solo metadata)",
+            'Filtro data': args.created_after if getattr(args, 'created_after', None) else 'NESSUNO'
         }
         print_configuration_summary(args, extra_info)
         logger.info("✅ Configurazione valida! Rimuovi --dry-run per eseguire.")
@@ -923,11 +945,7 @@ async def main():
                 logger.error("❌ Modalità --auto richiede --hashtag, --user o --trending!")
                 sys.exit(1)
         
-        # ✅ USA MODULI CORE per pulizia input
-        if search_type == 'hashtag':
-            search_term = clean_hashtag_input(search_term, parser)
-        elif search_type == 'user':
-            search_term = clean_username_input(search_term, parser)
+        # ✅ Input già puliti da validate_tiktok_arguments()
         
         # 4. Log configurazione finale
         logger.info(f"🎯 Configurazione finale:")
