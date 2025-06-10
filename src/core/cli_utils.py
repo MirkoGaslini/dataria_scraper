@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Core CLI Utils - Argparse patterns comuni
-Elimina duplicazione tra TikTok e Twitter scrapers per gestione CLI
+Core CLI Utils - Argparse patterns comuni + PAGINATION
+Versione aggiornata con supporto pagination commenti TikTok
 """
 
 import os
@@ -94,6 +94,46 @@ def add_content_filter_arguments(parser, default_min_length=10):
     )
 
 
+def add_pagination_arguments(parser):
+    """✅ NUOVO: Aggiunge argomenti CLI per pagination commenti"""
+    
+    # Gruppo pagination
+    pagination_group = parser.add_argument_group('📄 Pagination Commenti')
+    
+    pagination_group.add_argument(
+        '--pagination-mode',
+        type=str,
+        choices=['auto', 'paginated', 'limited', 'adaptive'],
+        default='limited',
+        help='''Modalità recupero commenti:
+• limited: Solo primi N commenti (veloce, default)
+• adaptive: Tutti i commenti fino a --max-total-comments (bilanciata)
+• paginated: TUTTI i commenti disponibili (lenta ma completa)
+• auto: Decide automaticamente in base al video'''
+    )
+    
+    pagination_group.add_argument(
+        '--max-total-comments',
+        type=int,
+        default=1000,
+        help='Limite massimo commenti totali per pagination (default: 1000)'
+    )
+    
+    pagination_group.add_argument(
+        '--batch-size',
+        type=int,
+        default=50,
+        help='Commenti per batch in pagination (default: 50)'
+    )
+    
+    pagination_group.add_argument(
+        '--delay-between-batches',
+        type=float,
+        default=2.0,
+        help='Secondi di pausa tra batch (anti rate-limit, default: 2.0)'
+    )
+
+
 def validate_common_arguments(args, parser):
     """
     Valida argomenti comuni e applica correzioni
@@ -120,6 +160,39 @@ def validate_common_arguments(args, parser):
         os.makedirs(args.output_dir, exist_ok=True)
     except Exception as e:
         parser.error(f"❌ Impossibile creare directory {args.output_dir}: {e}")
+    
+    return args
+
+
+def validate_pagination_arguments(args, parser):
+    """✅ NUOVO: Valida argomenti pagination specifici"""
+    
+    # Validazione max-total-comments
+    if args.max_total_comments < 1 or args.max_total_comments > 50000:
+        parser.error(f"❌ max-total-comments deve essere tra 1 e 50000 (ricevuto: {args.max_total_comments})")
+    
+    # Validazione batch-size
+    if args.batch_size < 1 or args.batch_size > 500:
+        parser.error(f"❌ batch-size deve essere tra 1 e 500 (ricevuto: {args.batch_size})")
+    
+    # Validazione delay-between-batches
+    if args.delay_between_batches < 0 or args.delay_between_batches > 60:
+        parser.error(f"❌ delay-between-batches deve essere tra 0 e 60 secondi (ricevuto: {args.delay_between_batches})")
+    
+    # Dependency check
+    if args.pagination_mode != 'limited' and not args.add_comments:
+        parser.error("❌ Modalità pagination richiede --add-comments")
+    
+    # Warning per modalità lente
+    if args.pagination_mode == 'paginated' and not args.auto:
+        print("⚠️  ATTENZIONE: Modalità PAGINATED può richiedere ore per video virali!")
+        if not args.auto:
+            confirm = input("Continuare? [y/N]: ").strip().lower()
+            if confirm != 'y':
+                parser.error("Operazione annullata dall'utente")
+    
+    elif args.pagination_mode == 'adaptive' and args.max_total_comments > 5000:
+        print(f"⚠️  ATTENZIONE: max-total-comments={args.max_total_comments} è molto alto")
     
     return args
 
@@ -225,6 +298,13 @@ def print_configuration_summary(args, extra_info=None):
     print(f"   - Auto mode: {'SÌ' if args.auto else 'NO'}")
     print(f"   - Filtri contenuto: {'DISATTIVATI' if args.no_filter else 'ATTIVI'}")
     
+    # ✅ NUOVO: Info pagination
+    if hasattr(args, 'pagination_mode'):
+        print(f"   - Pagination mode: {args.pagination_mode}")
+        if args.pagination_mode != 'limited':
+            print(f"   - Max total comments: {args.max_total_comments}")
+            print(f"   - Batch size: {args.batch_size}")
+    
     if hasattr(args, 'min_text_length'):
         print(f"   - Min text length: {args.min_text_length}")
     
@@ -238,20 +318,23 @@ def print_configuration_summary(args, extra_info=None):
 
 def setup_tiktok_argparse():
     """
-    Crea parser TikTok con argomenti comuni + specifici
+    ✅ AGGIORNATO: Crea parser TikTok con argomenti comuni + specifici + PAGINATION
     
     Returns:
-        ArgumentParser: Parser configurato per TikTok
+        ArgumentParser: Parser configurato per TikTok con pagination
     """
     
     parser = argparse.ArgumentParser(
-        description='TikTok Scraper avanzato con rilevanza, commenti e transcript',
+        description='🎵 TikTok Scraper avanzato con PAGINATION, rilevanza, commenti e transcript',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
     # Argomenti comuni
     add_common_arguments(parser)
     add_content_filter_arguments(parser, default_min_length=10)
+    
+    # ✅ NUOVO: Argomenti pagination
+    add_pagination_arguments(parser)
     
     # Modalità di ricerca TikTok (mutuamente esclusive)
     search_group = parser.add_mutually_exclusive_group(required=False)
@@ -305,7 +388,7 @@ def setup_tiktok_argparse():
         '--max-comments',
         type=int,
         default=10,
-        help='Numero massimo commenti per video (default: 10)'
+        help='Numero massimo commenti per video in modalità limited (default: 10)'
     )
     
     parser.add_argument(
@@ -378,7 +461,7 @@ def setup_tiktok_argparse():
     
 def validate_tiktok_arguments(args, parser):
     """
-    Validazioni specifiche TikTok
+    ✅ AGGIORNATO: Validazioni specifiche TikTok + PAGINATION
     
     Args:
         args: Argomenti parsati
@@ -410,13 +493,16 @@ def validate_tiktok_arguments(args, parser):
         if args.min_duration >= args.max_duration:
             parser.error("❌ min-duration deve essere < max-duration")
     
-    # ✅ NUOVO: Validazione created-after
+    # Validazione created-after
     if getattr(args, 'created_after', None):
         try:
             from datetime import datetime
             datetime.strptime(args.created_after, '%Y-%m-%d')
         except ValueError:
             parser.error("❌ created-after deve essere in formato YYYY-MM-DD (es: 2025-06-01)")
+    
+    # ✅ NUOVO: Validazione pagination
+    args = validate_pagination_arguments(args, parser)
     
     # Pulizia input
     if args.hashtag:

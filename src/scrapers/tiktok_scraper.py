@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-TikTok Scraper - Versione Refactorizzata con Risposte ai Commenti
-Usa moduli core per eliminare duplicazioni, mantiene logiche specifiche TikTok
+TikTok Scraper - Versione con PAGINATION COMPLETA
+✅ Aggiunto supporto pagination per recuperare TUTTI i commenti
+✅ 4 modalità: limited, adaptive, paginated, auto
+✅ Batch processing con rate limiting
 """
 
 import os
@@ -10,6 +12,7 @@ import re
 import sys
 import asyncio
 import requests
+import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -153,6 +156,330 @@ def should_get_transcript(args, video_count, logger):
 
 
 # ================================
+# ✅ NUOVE FUNZIONI PAGINATION COMMENTI
+# ================================
+
+async def get_all_video_comments_paginated(api, video_id, include_replies=False, max_replies=3, 
+                                         max_total_comments=None, batch_size=50, 
+                                         delay_between_batches=2, logger=None):
+    """
+    ✅ NUOVO: Recupera TUTTI i commenti di un video usando pagination
+    
+    Args:
+        api: TikTokApi instance
+        video_id: ID del video
+        include_replies: Se includere risposte ai commenti
+        max_replies: Max risposte per commento
+        max_total_comments: Limite massimo commenti totali (None = illimitato)
+        batch_size: Commenti per batch/pagina (default: 50)
+        delay_between_batches: Secondi di attesa tra batch (anti rate-limit)
+        logger: Logger per debug
+    
+    Returns:
+        list: Lista completa di tutti i commenti con metadata pagination
+    """
+    try:
+        if not video_id or video_id == 'unknown':
+            logger.debug("⚠️  Video ID mancante per pagination commenti")
+            return []
+        
+        logger.info(f"🔄 PAGINATION: Recuperando TUTTI i commenti per video {video_id}")
+        logger.info(f"📊 Config: batch_size={batch_size}, max_total={max_total_comments or 'illimitato'}")
+        
+        video_obj = api.video(id=video_id)
+        
+        all_comments = []
+        batch_count = 0
+        total_processed = 0
+        start_time = time.time()
+        
+        # Pagination loop - continua fino a che ci sono commenti
+        async for comment in video_obj.comments(count=max_total_comments or 999999):
+            try:
+                comment_dict = comment.as_dict
+                comment_text = comment_dict.get('text', '').strip()
+                
+                # Filtra commenti vuoti
+                if comment_text and len(comment_text) >= 2:
+                    # Struttura commento base
+                    comment_obj = {
+                        "text": comment_text,
+                        "comment_id": comment_dict.get('cid', 'unknown'),
+                        "replies_count": 0,
+                        "has_replies": False,
+                        "replies": [],
+                        "batch_number": batch_count + 1,  # Metadata pagination
+                        "comment_index": len(all_comments) + 1  # Posizione globale
+                    }
+                    
+                    # Recupera risposte se richiesto
+                    if include_replies:
+                        try:
+                            replies_list = []
+                            reply_count = 0
+                            
+                            async for reply in comment.replies(count=max_replies * 2):
+                                try:
+                                    reply_dict = reply.as_dict
+                                    reply_text = reply_dict.get('text', '').strip()
+                                    
+                                    if reply_text and len(reply_text) >= 2:
+                                        reply_obj = {
+                                            "text": reply_text,
+                                            "reply_id": reply_dict.get('cid', 'unknown')
+                                        }
+                                        replies_list.append(reply_obj)
+                                        reply_count += 1
+                                        
+                                        if reply_count >= max_replies:
+                                            break
+                                            
+                                except Exception as e:
+                                    logger.debug(f"⚠️  Errore elaborazione singola risposta: {e}")
+                                    continue
+                            
+                            comment_obj["replies"] = replies_list
+                            comment_obj["replies_count"] = len(replies_list)
+                            comment_obj["has_replies"] = len(replies_list) > 0
+                            
+                        except Exception as e:
+                            logger.debug(f"⚠️  Errore recupero risposte: {e}")
+                    
+                    all_comments.append(comment_obj)
+                    total_processed += 1
+                    
+                    # Progress logging ogni batch_size commenti
+                    if total_processed % batch_size == 0:
+                        batch_count += 1
+                        elapsed = time.time() - start_time
+                        rate = total_processed / elapsed if elapsed > 0 else 0
+                        
+                        logger.info(f"📦 Batch #{batch_count}: {total_processed} commenti | {rate:.1f}/sec | {elapsed:.1f}s")
+                        
+                        # Delay anti rate-limit tra batch
+                        if delay_between_batches > 0:
+                            logger.debug(f"⏳ Pausa {delay_between_batches}s...")
+                            await asyncio.sleep(delay_between_batches)
+                    
+                    # Limite massimo raggiunto
+                    if max_total_comments and total_processed >= max_total_comments:
+                        logger.info(f"🛑 Limite massimo raggiunto: {max_total_comments} commenti")
+                        break
+                        
+            except Exception as e:
+                logger.debug(f"⚠️  Errore elaborazione commento: {e}")
+                continue
+        
+        # Statistiche finali
+        elapsed_total = time.time() - start_time
+        avg_rate = total_processed / elapsed_total if elapsed_total > 0 else 0
+        total_replies = sum(comment.get('replies_count', 0) for comment in all_comments)
+        
+        logger.info(f"✅ PAGINATION COMPLETATA per video {video_id}")
+        logger.info(f"📊 Commenti: {len(all_comments)} | Tempo: {elapsed_total:.1f}s | Rate: {avg_rate:.1f}/sec")
+        
+        if include_replies:
+            logger.info(f"💬 Risposte raccolte: {total_replies}")
+        
+        # Aggiungi metadata globali
+        for comment in all_comments:
+            comment["pagination_metadata"] = {
+                "total_comments_in_video": len(all_comments),
+                "total_batches": batch_count + 1,
+                "collection_duration_seconds": round(elapsed_total, 2),
+                "average_rate_per_second": round(avg_rate, 2),
+                "collection_timestamp": datetime.now().isoformat()
+            }
+        
+        return all_comments
+        
+    except Exception as e:
+        logger.error(f"❌ Errore pagination commenti per video {video_id}: {e}")
+        return []
+
+
+async def get_video_comments_smart(api, video_id, pagination_mode="limited", max_comments=10, 
+                                 include_replies=False, max_replies=3, 
+                                 batch_size=50, max_total_comments=None, logger=None):
+    """
+    ✅ NUOVO: Funzione SMART che decide automaticamente tra pagination e limite fisso
+    
+    Args:
+        pagination_mode (str): 
+            - "limited": Usa limite fisso (comportamento originale)
+            - "adaptive": Pagination fino a max_total_comments
+            - "paginated": Pagination completa - TUTTI i commenti
+            - "auto": Decide automaticamente
+    """
+    
+    if pagination_mode == "limited":
+        # Comportamento originale - limite fisso
+        logger.debug(f"💬 Modalità LIMITED: max {max_comments} commenti")
+        return await get_video_comments(api, video_id, max_comments, include_replies, max_replies, logger)
+    
+    elif pagination_mode == "paginated":
+        # Pagination completa - TUTTI i commenti
+        logger.debug(f"🔄 Modalità PAGINATED: recupero TUTTI i commenti")
+        return await get_all_video_comments_paginated(
+            api, video_id, include_replies, max_replies, 
+            max_total_comments=None, batch_size=batch_size, 
+            delay_between_batches=2.0, logger=logger
+        )
+    
+    elif pagination_mode == "adaptive":
+        # Pagination con limite massimo
+        logger.debug(f"🎯 Modalità ADAPTIVE: max {max_total_comments or 'illimitato'} commenti")
+        return await get_all_video_comments_paginated(
+            api, video_id, include_replies, max_replies,
+            max_total_comments=max_total_comments, batch_size=batch_size, 
+            delay_between_batches=2.0, logger=logger
+        )
+    
+    else:  # "auto"
+        # Decide automaticamente in base ai metadati del video
+        logger.debug(f"🤖 Modalità AUTO: decisione automatica")
+        
+        # Per ora usa adaptive con limite ragionevole
+        default_limit = 500  # Limite ragionevole per auto mode
+        logger.debug(f"🎯 AUTO-MODE: usando adaptive con limite {default_limit}")
+        
+        return await get_all_video_comments_paginated(
+            api, video_id, include_replies, max_replies,
+            max_total_comments=default_limit, batch_size=batch_size, 
+            delay_between_batches=2.0, logger=logger
+        )
+
+
+# ================================
+# FUNZIONI COMMENTI ORIGINALI (MANTIENUTE PER COMPATIBILITÀ)
+# ================================
+
+async def get_video_comments(api, video_id, max_comments=10, include_replies=False, max_replies=3, logger=None):
+    """Recupera i commenti di un video TikTok con opzioni per risposte nested - VERSIONE ORIGINALE"""
+    try:
+        if not video_id or video_id == 'unknown':
+            logger.debug("⚠️  Video ID mancante per commenti")
+            return []
+        
+        if include_replies:
+            logger.debug(f"💬 Recuperando commenti + risposte per video {video_id} (max {max_replies} risposte per commento)...")
+        else:
+            logger.debug(f"💬 Recuperando commenti per video {video_id}...")
+        
+        # Crea oggetto video per ottenere commenti
+        video_obj = api.video(id=video_id)
+        
+        comments_list = []
+        comment_count = 0
+        
+        # Itera sui commenti del video
+        async for comment in video_obj.comments(count=max_comments * 2):  # Richiedi più commenti per sicurezza
+            try:
+                comment_dict = comment.as_dict
+                comment_text = comment_dict.get('text', '').strip()
+                
+                # Filtra commenti vuoti o troppo corti
+                if comment_text and len(comment_text) >= 2:
+                    # Struttura commento base
+                    comment_obj = {
+                        "text": comment_text,
+                        "comment_id": comment_dict.get('cid', 'unknown'),
+                        "replies_count": 0,
+                        "has_replies": False,
+                        "replies": []
+                    }
+                    
+                    # ✅ Recupera risposte se richiesto
+                    if include_replies:
+                        try:
+                            replies_list = []
+                            reply_count = 0
+                            
+                            # Ottieni risposte al commento
+                            async for reply in comment.replies(count=max_replies * 2):
+                                try:
+                                    reply_dict = reply.as_dict
+                                    reply_text = reply_dict.get('text', '').strip()
+                                    
+                                    if reply_text and len(reply_text) >= 2:
+                                        reply_obj = {
+                                            "text": reply_text,
+                                            "reply_id": reply_dict.get('cid', 'unknown')
+                                        }
+                                        replies_list.append(reply_obj)
+                                        reply_count += 1
+                                        
+                                        if reply_count >= max_replies:
+                                            break
+                                            
+                                except Exception as e:
+                                    logger.debug(f"⚠️  Errore elaborazione singola risposta: {e}")
+                                    continue
+                            
+                            # Aggiorna commento con risposte
+                            comment_obj["replies"] = replies_list
+                            comment_obj["replies_count"] = len(replies_list)
+                            comment_obj["has_replies"] = len(replies_list) > 0
+                            
+                            if len(replies_list) > 0:
+                                logger.debug(f"✅ Commento {comment_obj['comment_id']}: {len(replies_list)} risposte raccolte")
+                                
+                        except Exception as e:
+                            logger.debug(f"⚠️  Errore recupero risposte per commento {comment_obj.get('comment_id')}: {e}")
+                            # Mantieni commento anche se risposte falliscono
+                    
+                    comments_list.append(comment_obj)
+                    comment_count += 1
+                    
+                    # Fermati quando raggiungi il limite
+                    if comment_count >= max_comments:
+                        break
+                        
+            except Exception as e:
+                logger.debug(f"⚠️  Errore elaborazione singolo commento: {e}")
+                continue
+        
+        # Calcola statistiche totali
+        total_replies = sum(comment.get('replies_count', 0) for comment in comments_list)
+        
+        if include_replies and total_replies > 0:
+            logger.debug(f"✅ Raccolti {len(comments_list)} commenti + {total_replies} risposte per video {video_id}")
+        else:
+            logger.debug(f"✅ Raccolti {len(comments_list)} commenti per video {video_id}")
+            
+        return comments_list
+        
+    except Exception as e:
+        logger.debug(f"⚠️  Errore recupero commenti per video {video_id}: {e}")
+        return []
+
+
+def should_get_comments(args, video_count, logger):
+    """Decide se recuperare commenti in base ai parametri"""
+    if not args.add_comments:
+        return False
+    
+    # ✅ NUOVO: Warning specifici per pagination
+    if getattr(args, 'pagination_mode', 'limited') != 'limited':
+        if args.pagination_mode == 'paginated':
+            logger.warning(f"⚠️  Modalità PAGINATED per {video_count} video - può richiedere ORE!")
+        elif args.pagination_mode == 'adaptive':
+            max_total = getattr(args, 'max_total_comments', 1000)
+            estimated_time = video_count * (max_total / 100)  # Stima ~100 commenti/minuto
+            logger.warning(f"⚠️  Modalità ADAPTIVE ({max_total} commenti/video) - tempo stimato: ~{estimated_time:.0f} minuti")
+        elif args.pagination_mode == 'auto':
+            logger.warning(f"⚠️  Modalità AUTO - tempo variabile basato sui video")
+    elif video_count > 20:
+        logger.warning(f"⚠️  Recupero commenti per {video_count} video - potrebbe essere lento")
+        logger.warning(f"⚠️  Considera di ridurre --count per test più veloci")
+    
+    if args.include_replies and getattr(args, 'pagination_mode', 'limited') != 'limited':
+        logger.warning(f"⚠️  Pagination + risposte abilitato - tempo MOLTO aumentato")
+    
+    return True
+
+
+# ================================
 # FUNZIONI RILEVANZA (SPECIFICHE TIKTOK)
 # ================================
 
@@ -263,125 +590,6 @@ def calculate_video_relevance(search_term, video_data, relevance_threshold, logg
 
 
 # ================================
-# FUNZIONI COMMENTI CON RISPOSTE (SPECIFICHE TIKTOK)
-# ================================
-
-async def get_video_comments(api, video_id, max_comments=10, include_replies=False, max_replies=3, logger=None):
-    """Recupera i commenti di un video TikTok con opzioni per risposte nested"""
-    try:
-        if not video_id or video_id == 'unknown':
-            logger.debug("⚠️  Video ID mancante per commenti")
-            return []
-        
-        if include_replies:
-            logger.debug(f"💬 Recuperando commenti + risposte per video {video_id} (max {max_replies} risposte per commento)...")
-        else:
-            logger.debug(f"💬 Recuperando commenti per video {video_id}...")
-        
-        # Crea oggetto video per ottenere commenti
-        video_obj = api.video(id=video_id)
-        
-        comments_list = []
-        comment_count = 0
-        
-        # Itera sui commenti del video
-        async for comment in video_obj.comments(count=max_comments * 2):  # Richiedi più commenti per sicurezza
-            try:
-                comment_dict = comment.as_dict
-                comment_text = comment_dict.get('text', '').strip()
-                
-                # Filtra commenti vuoti o troppo corti
-                if comment_text and len(comment_text) >= 2:
-                    # Struttura commento base
-                    comment_obj = {
-                        "text": comment_text,
-                        "comment_id": comment_dict.get('cid', 'unknown'),
-                        "replies_count": 0,
-                        "has_replies": False,
-                        "replies": []
-                    }
-                    
-                    # ✅ NUOVO: Recupera risposte se richiesto
-                    if include_replies:
-                        try:
-                            replies_list = []
-                            reply_count = 0
-                            
-                            # Ottieni risposte al commento
-                            async for reply in comment.replies(count=max_replies * 2):
-                                try:
-                                    reply_dict = reply.as_dict
-                                    reply_text = reply_dict.get('text', '').strip()
-                                    
-                                    if reply_text and len(reply_text) >= 2:
-                                        reply_obj = {
-                                            "text": reply_text,
-                                            "reply_id": reply_dict.get('cid', 'unknown')
-                                        }
-                                        replies_list.append(reply_obj)
-                                        reply_count += 1
-                                        
-                                        if reply_count >= max_replies:
-                                            break
-                                            
-                                except Exception as e:
-                                    logger.debug(f"⚠️  Errore elaborazione singola risposta: {e}")
-                                    continue
-                            
-                            # Aggiorna commento con risposte
-                            comment_obj["replies"] = replies_list
-                            comment_obj["replies_count"] = len(replies_list)
-                            comment_obj["has_replies"] = len(replies_list) > 0
-                            
-                            if len(replies_list) > 0:
-                                logger.debug(f"✅ Commento {comment_obj['comment_id']}: {len(replies_list)} risposte raccolte")
-                                
-                        except Exception as e:
-                            logger.debug(f"⚠️  Errore recupero risposte per commento {comment_obj.get('comment_id')}: {e}")
-                            # Mantieni commento anche se risposte falliscono
-                    
-                    comments_list.append(comment_obj)
-                    comment_count += 1
-                    
-                    # Fermati quando raggiungi il limite
-                    if comment_count >= max_comments:
-                        break
-                        
-            except Exception as e:
-                logger.debug(f"⚠️  Errore elaborazione singolo commento: {e}")
-                continue
-        
-        # Calcola statistiche totali
-        total_replies = sum(comment.get('replies_count', 0) for comment in comments_list)
-        
-        if include_replies and total_replies > 0:
-            logger.debug(f"✅ Raccolti {len(comments_list)} commenti + {total_replies} risposte per video {video_id}")
-        else:
-            logger.debug(f"✅ Raccolti {len(comments_list)} commenti per video {video_id}")
-            
-        return comments_list
-        
-    except Exception as e:
-        logger.debug(f"⚠️  Errore recupero commenti per video {video_id}: {e}")
-        return []
-
-
-def should_get_comments(args, video_count, logger):
-    """Decide se recuperare commenti in base ai parametri"""
-    if not args.add_comments:
-        return False
-    
-    if video_count > 20:
-        logger.warning(f"⚠️  Recupero commenti per {video_count} video - potrebbe essere lento")
-        logger.warning(f"⚠️  Considera di ridurre --count per test più veloci")
-    
-    if args.include_replies:
-        logger.warning(f"⚠️  Recupero risposte abilitato - tempo elaborazione significativamente aumentato")
-    
-    return True
-
-
-# ================================
 # FUNZIONI UTILITY (SPECIFICHE TIKTOK)
 # ================================
 
@@ -437,9 +645,6 @@ def apply_video_filters(video_data, args, search_term, logger):
                 logger.debug(f"🗑️  Video {video_data.get('id')} scartato: descrizione non significativa")
                 return False
         
-        # ✅ FILTRO RILEVANZA RIMOSSO - Calcolo mantenuto ma non filtra più
-        # Il relevance_score rimane come metadata per future query DB
-        
         return True
         
     except Exception as e:
@@ -485,7 +690,7 @@ def extract_video_data(video_dict, search_type, search_term, logger, get_transcr
         # ✅ USA MODULO CORE per estrazione hashtag
         hashtags = extract_hashtags_from_desc(desc)
         
-        # Struttura dati TikTok con supporto risposte commenti
+        # Struttura dati TikTok con supporto risposte commenti + PAGINATION
         video_data = {
             'id': video_id,
             'description': desc,
@@ -506,8 +711,13 @@ def extract_video_data(video_dict, search_type, search_term, logger, get_transcr
             'comments': [],  # Sarà popolato con oggetti nested con risposte
             'comments_count': 0,
             'comments_retrieved': False,
-            'total_replies_count': 0,  # ✅ NUOVO: Conta totale risposte
-            'replies_retrieved': False  # ✅ NUOVO: Flag per risposte recuperate
+            'total_replies_count': 0,
+            'replies_retrieved': False,
+            # ✅ NUOVO: Metadata pagination
+            'pagination_used': False,
+            'pagination_mode': 'limited',
+            'total_comments_collected': 0,
+            'collection_duration_seconds': 0
         }
         
         # Calcola rilevanza del video
@@ -529,16 +739,18 @@ def extract_video_data(video_dict, search_type, search_term, logger, get_transcr
             'comments_retrieved': False,
             'total_replies_count': 0,
             'replies_retrieved': False,
+            'pagination_used': False,
+            'pagination_mode': 'limited',
             'error': str(e)
         }
 
 
 # ================================
-# FUNZIONI DI RICERCA (SPECIFICHE TIKTOK)
+# ✅ FUNZIONI DI RICERCA AGGIORNATE CON PAGINATION
 # ================================
 
 async def search_hashtag_videos(api, hashtag, count, args, logger):
-    """Cerca video per hashtag"""
+    """✅ AGGIORNATO: Cerca video per hashtag con supporto pagination"""
     try:
         logger.info(f"🔍 Cercando {count} video per hashtag #{hashtag}")
         
@@ -546,13 +758,19 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
         get_transcript = should_get_transcript(args, count, logger)
         get_comments = should_get_comments(args, count, logger)
         
+        # ✅ NUOVO: Info pagination
+        if get_comments and getattr(args, 'pagination_mode', 'limited') != 'limited':
+            mode_descriptions = {
+                'limited': f"primi {args.max_comments} commenti",
+                'adaptive': f"fino a {getattr(args, 'max_total_comments', 1000)} commenti per video",
+                'paginated': "TUTTI i commenti disponibili (può richiedere ore)",
+                'auto': "modalità automatica intelligente"
+            }
+            mode_desc = mode_descriptions.get(args.pagination_mode, 'modalità sconosciuta')
+            logger.info(f"🔄 Pagination commenti: {mode_desc}")
+        
         if get_transcript:
             logger.info("🎙️  Transcript abilitato - tempo di elaborazione aumentato")
-        if get_comments:
-            if args.include_replies:
-                logger.info(f"💬 Commenti + risposte abilitati (max {args.max_comments} commenti, {args.max_replies} risposte) - tempo di elaborazione significativamente aumentato")
-            else:
-                logger.info(f"💬 Commenti abilitati (max {args.max_comments} per video) - tempo di elaborazione aumentato")
         
         hashtag_obj = api.hashtag(name=hashtag)
         
@@ -574,22 +792,37 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
             
             # Applica filtri
             if apply_video_filters(video_data, args, hashtag, logger):
-                # Aggiungi commenti se richiesto
+                # ✅ AGGIORNATO: Usa la nuova funzione smart per commenti
                 if get_comments:
                     try:
-                        comments = await get_video_comments(
-                            api, 
-                            video_data['id'], 
-                            args.max_comments, 
-                            args.include_replies,
-                            args.max_replies,
-                            logger
+                        comments = await get_video_comments_smart(
+                            api=api,
+                            video_id=video_data['id'],
+                            pagination_mode=getattr(args, 'pagination_mode', 'limited'),
+                            max_comments=args.max_comments,
+                            include_replies=args.include_replies,
+                            max_replies=args.max_replies,
+                            batch_size=getattr(args, 'batch_size', 50),
+                            max_total_comments=getattr(args, 'max_total_comments', None),
+                            logger=logger
                         )
+                        
                         video_data['comments'] = comments
                         video_data['comments_count'] = len(comments)
                         video_data['comments_retrieved'] = True
                         
-                        # ✅ NUOVO: Aggiungi statistiche risposte
+                        # ✅ NUOVO: Metadata pagination
+                        if comments and getattr(args, 'pagination_mode', 'limited') != 'limited':
+                            video_data['pagination_used'] = True
+                            video_data['pagination_mode'] = args.pagination_mode
+                            
+                            # Estrai metadata dal primo commento se disponibile
+                            if comments and 'pagination_metadata' in comments[0]:
+                                pagination_meta = comments[0]['pagination_metadata']
+                                video_data['total_comments_collected'] = pagination_meta.get('total_comments_in_video', len(comments))
+                                video_data['collection_duration_seconds'] = pagination_meta.get('collection_duration_seconds', 0)
+                        
+                        # Statistiche risposte
                         if args.include_replies:
                             total_replies = sum(comment.get('replies_count', 0) for comment in comments)
                             video_data['total_replies_count'] = total_replies
@@ -617,6 +850,7 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
             if processed >= count * 5:
                 break
         
+        # ✅ AGGIORNATO: Statistiche con info pagination
         logger.info(f"📊 Risultati hashtag #{hashtag}:")
         logger.info(f"   - Processati: {processed}")
         logger.info(f"   - Mantenuti: {kept}")
@@ -632,6 +866,13 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
             logger.info(f"   - Con commenti: {comments_count}")
             logger.info(f"   - Commenti totali: {total_comments}")
             
+            # ✅ NUOVO: Statistiche pagination
+            if getattr(args, 'pagination_mode', 'limited') != 'limited':
+                paginated_videos = sum(1 for v in videos if v.get('pagination_used'))
+                total_collection_time = sum(v.get('collection_duration_seconds', 0) for v in videos)
+                logger.info(f"   - Video con pagination: {paginated_videos}")
+                logger.info(f"   - Tempo raccolta commenti: {total_collection_time:.1f} secondi")
+            
             if args.include_replies:
                 total_replies = sum(v.get('total_replies_count', 0) for v in videos)
                 logger.info(f"   - Risposte totali: {total_replies}")
@@ -644,7 +885,7 @@ async def search_hashtag_videos(api, hashtag, count, args, logger):
 
 
 async def search_user_videos(api, username, count, args, logger):
-    """Cerca video di un utente"""
+    """✅ AGGIORNATO: Cerca video di un utente con supporto pagination"""
     try:
         logger.info(f"🔍 Cercando {count} video dell'utente @{username}")
         
@@ -652,13 +893,19 @@ async def search_user_videos(api, username, count, args, logger):
         get_transcript = should_get_transcript(args, count, logger)
         get_comments = should_get_comments(args, count, logger)
         
+        # Info pagination
+        if get_comments and getattr(args, 'pagination_mode', 'limited') != 'limited':
+            mode_descriptions = {
+                'limited': f"primi {args.max_comments} commenti",
+                'adaptive': f"fino a {getattr(args, 'max_total_comments', 1000)} commenti per video",
+                'paginated': "TUTTI i commenti disponibili",
+                'auto': "modalità automatica"
+            }
+            mode_desc = mode_descriptions.get(args.pagination_mode, 'modalità sconosciuta')
+            logger.info(f"🔄 Pagination commenti: {mode_desc}")
+        
         if get_transcript:
             logger.info("🎙️  Transcript abilitato - tempo di elaborazione aumentato")
-        if get_comments:
-            if args.include_replies:
-                logger.info(f"💬 Commenti + risposte abilitati (max {args.max_comments} commenti, {args.max_replies} risposte) - tempo di elaborazione significativamente aumentato")
-            else:
-                logger.info(f"💬 Commenti abilitati (max {args.max_comments} per video) - tempo di elaborazione aumentato")
         
         user_obj = api.user(username)
         
@@ -687,20 +934,34 @@ async def search_user_videos(api, username, count, args, logger):
             
             # Applica filtri
             if apply_video_filters(video_data, args, username, logger):
-                # Aggiungi commenti se richiesto
+                # ✅ AGGIORNATO: Usa la nuova funzione smart per commenti
                 if get_comments:
                     try:
-                        comments = await get_video_comments(
-                            api, 
-                            video_data['id'], 
-                            args.max_comments, 
-                            args.include_replies,
-                            args.max_replies,
-                            logger
+                        comments = await get_video_comments_smart(
+                            api=api,
+                            video_id=video_data['id'],
+                            pagination_mode=getattr(args, 'pagination_mode', 'limited'),
+                            max_comments=args.max_comments,
+                            include_replies=args.include_replies,
+                            max_replies=args.max_replies,
+                            batch_size=getattr(args, 'batch_size', 50),
+                            max_total_comments=getattr(args, 'max_total_comments', None),
+                            logger=logger
                         )
+                        
                         video_data['comments'] = comments
                         video_data['comments_count'] = len(comments)
                         video_data['comments_retrieved'] = True
+                        
+                        # Metadata pagination
+                        if comments and getattr(args, 'pagination_mode', 'limited') != 'limited':
+                            video_data['pagination_used'] = True
+                            video_data['pagination_mode'] = args.pagination_mode
+                            
+                            if comments and 'pagination_metadata' in comments[0]:
+                                pagination_meta = comments[0]['pagination_metadata']
+                                video_data['total_comments_collected'] = pagination_meta.get('total_comments_in_video', len(comments))
+                                video_data['collection_duration_seconds'] = pagination_meta.get('collection_duration_seconds', 0)
                         
                         # Aggiungi statistiche risposte
                         if args.include_replies:
@@ -729,6 +990,7 @@ async def search_user_videos(api, username, count, args, logger):
             if processed >= count * 5:
                 break
         
+        # Statistiche con pagination
         logger.info(f"📊 Risultati utente @{username}:")
         logger.info(f"   - Processati: {processed}")
         logger.info(f"   - Mantenuti: {kept}")
@@ -744,6 +1006,12 @@ async def search_user_videos(api, username, count, args, logger):
             logger.info(f"   - Con commenti: {comments_count}")
             logger.info(f"   - Commenti totali: {total_comments}")
             
+            if getattr(args, 'pagination_mode', 'limited') != 'limited':
+                paginated_videos = sum(1 for v in videos if v.get('pagination_used'))
+                total_collection_time = sum(v.get('collection_duration_seconds', 0) for v in videos)
+                logger.info(f"   - Video con pagination: {paginated_videos}")
+                logger.info(f"   - Tempo raccolta commenti: {total_collection_time:.1f} secondi")
+            
             if args.include_replies:
                 total_replies = sum(v.get('total_replies_count', 0) for v in videos)
                 logger.info(f"   - Risposte totali: {total_replies}")
@@ -756,7 +1024,7 @@ async def search_user_videos(api, username, count, args, logger):
 
 
 async def search_trending_videos(api, count, args, logger):
-    """Cerca video trending"""
+    """✅ AGGIORNATO: Cerca video trending con supporto pagination"""
     try:
         logger.info(f"🔍 Cercando {count} video trending")
         
@@ -764,13 +1032,19 @@ async def search_trending_videos(api, count, args, logger):
         get_transcript = should_get_transcript(args, count, logger)
         get_comments = should_get_comments(args, count, logger)
         
+        # Info pagination
+        if get_comments and getattr(args, 'pagination_mode', 'limited') != 'limited':
+            mode_descriptions = {
+                'limited': f"primi {args.max_comments} commenti",
+                'adaptive': f"fino a {getattr(args, 'max_total_comments', 1000)} commenti per video",
+                'paginated': "TUTTI i commenti disponibili",
+                'auto': "modalità automatica"
+            }
+            mode_desc = mode_descriptions.get(args.pagination_mode, 'modalità sconosciuta')
+            logger.info(f"🔄 Pagination commenti: {mode_desc}")
+        
         if get_transcript:
             logger.info("🎙️  Transcript abilitato - tempo di elaborazione aumentato")
-        if get_comments:
-            if args.include_replies:
-                logger.info(f"💬 Commenti + risposte abilitati (max {args.max_comments} commenti, {args.max_replies} risposte) - tempo di elaborazione significativamente aumentato")
-            else:
-                logger.info(f"💬 Commenti abilitati (max {args.max_comments} per video) - tempo di elaborazione aumentato")
         
         videos = []
         processed = 0
@@ -790,20 +1064,34 @@ async def search_trending_videos(api, count, args, logger):
             
             # Applica filtri
             if apply_video_filters(video_data, args, 'trending', logger):
-                # Aggiungi commenti se richiesto
+                # ✅ AGGIORNATO: Usa la nuova funzione smart per commenti
                 if get_comments:
                     try:
-                        comments = await get_video_comments(
-                            api, 
-                            video_data['id'], 
-                            args.max_comments, 
-                            args.include_replies,
-                            args.max_replies,
-                            logger
+                        comments = await get_video_comments_smart(
+                            api=api,
+                            video_id=video_data['id'],
+                            pagination_mode=getattr(args, 'pagination_mode', 'limited'),
+                            max_comments=args.max_comments,
+                            include_replies=args.include_replies,
+                            max_replies=args.max_replies,
+                            batch_size=getattr(args, 'batch_size', 50),
+                            max_total_comments=getattr(args, 'max_total_comments', None),
+                            logger=logger
                         )
+                        
                         video_data['comments'] = comments
                         video_data['comments_count'] = len(comments)
                         video_data['comments_retrieved'] = True
+                        
+                        # Metadata pagination
+                        if comments and getattr(args, 'pagination_mode', 'limited') != 'limited':
+                            video_data['pagination_used'] = True
+                            video_data['pagination_mode'] = args.pagination_mode
+                            
+                            if comments and 'pagination_metadata' in comments[0]:
+                                pagination_meta = comments[0]['pagination_metadata']
+                                video_data['total_comments_collected'] = pagination_meta.get('total_comments_in_video', len(comments))
+                                video_data['collection_duration_seconds'] = pagination_meta.get('collection_duration_seconds', 0)
                         
                         # Aggiungi statistiche risposte
                         if args.include_replies:
@@ -832,6 +1120,7 @@ async def search_trending_videos(api, count, args, logger):
             if processed >= count * 5:
                 break
         
+        # Statistiche con pagination
         logger.info(f"📊 Risultati trending:")
         logger.info(f"   - Processati: {processed}")
         logger.info(f"   - Mantenuti: {kept}")
@@ -847,6 +1136,12 @@ async def search_trending_videos(api, count, args, logger):
             logger.info(f"   - Con commenti: {comments_count}")
             logger.info(f"   - Commenti totali: {total_comments}")
             
+            if getattr(args, 'pagination_mode', 'limited') != 'limited':
+                paginated_videos = sum(1 for v in videos if v.get('pagination_used'))
+                total_collection_time = sum(v.get('collection_duration_seconds', 0) for v in videos)
+                logger.info(f"   - Video con pagination: {paginated_videos}")
+                logger.info(f"   - Tempo raccolta commenti: {total_collection_time:.1f} secondi")
+            
             if args.include_replies:
                 total_replies = sum(v.get('total_replies_count', 0) for v in videos)
                 logger.info(f"   - Risposte totali: {total_replies}")
@@ -859,11 +1154,11 @@ async def search_trending_videos(api, count, args, logger):
 
 
 # ================================
-# FUNZIONI SALVATAGGIO E SUMMARY (SPECIFICHE TIKTOK)
+# FUNZIONI SALVATAGGIO E SUMMARY (AGGIORNATE)
 # ================================
 
 def save_videos(videos, search_type, search_term, args, logger):
-    """Salva video in formato JSONL - Una riga per video"""
+    """✅ AGGIORNATO: Salva video in formato JSONL con metadata pagination"""
     if not videos:
         logger.warning("⚠️  Nessun video da salvare")
         return None
@@ -914,6 +1209,13 @@ def save_videos(videos, search_type, search_term, args, logger):
             logger.info(f"   - Video con commenti: {comments_count}/{len(videos)}")
             logger.info(f"   - Commenti totali: {total_comments:,}")
             
+            # ✅ NUOVO: Statistiche pagination
+            if getattr(args, 'pagination_mode', 'limited') != 'limited':
+                paginated_count = sum(1 for video in videos if video.get('pagination_used'))
+                total_collection_time = sum(video.get('collection_duration_seconds', 0) for video in videos)
+                logger.info(f"   - Video con pagination: {paginated_count}/{len(videos)}")
+                logger.info(f"   - Tempo raccolta totale: {total_collection_time:.1f} secondi")
+            
             if args.include_replies:
                 total_replies = sum(video.get('total_replies_count', 0) for video in videos)
                 logger.info(f"   - Risposte totali: {total_replies:,}")
@@ -926,7 +1228,7 @@ def save_videos(videos, search_type, search_term, args, logger):
 
 
 def print_summary(videos, search_type, search_term, logger):
-    """Stampa riassunto dettagliato dei video raccolti"""
+    """✅ AGGIORNATO: Stampa riassunto dettagliato con statistiche pagination"""
     if not videos:
         return
     
@@ -946,7 +1248,7 @@ def print_summary(videos, search_type, search_term, logger):
         # Statistiche rilevanza (solo per info, non più filtrate)
         relevant_videos = sum(1 for video in videos if video.get('is_relevant', False))
         avg_relevance = sum(video.get('relevance_score', 0) for video in videos) / total_videos if total_videos else 0
-        logger.info(f"🎯 Video rilevanti: {relevant_videos}/{total_videos} ({(relevant_videos/total_videos)*100:.1f}%) [INFO ONLY - Non filtrato]")
+        logger.info(f"🎯 Video rilevanti: {relevant_videos}/{total_videos} ({(relevant_videos/total_videos)*100:.1f}%) [INFO ONLY]")
         logger.info(f"📊 Rilevanza media: {avg_relevance:.3f}")
         
         # Statistiche transcript
@@ -958,25 +1260,34 @@ def print_summary(videos, search_type, search_term, logger):
             avg_transcript_length = total_transcript_chars / videos_with_transcript if videos_with_transcript else 0
             logger.info(f"📝 Lunghezza media transcript: {avg_transcript_length:.0f} caratteri")
         
-        # Statistiche commenti e risposte
+        # ✅ AGGIORNATO: Statistiche commenti e pagination
         videos_with_comments = sum(1 for video in videos if video.get('comments_retrieved'))
         if videos_with_comments > 0:
             total_comments = sum(video.get('comments_count', 0) for video in videos)
             avg_comments = total_comments / videos_with_comments if videos_with_comments else 0
             logger.info(f"💬 Video con commenti: {videos_with_comments}/{total_videos} ({(videos_with_comments/total_videos)*100:.1f}%)")
-            logger.info(f"💭 Commenti totali: {total_comments}")
+            logger.info(f"💭 Commenti totali: {total_comments:,}")
             logger.info(f"📈 Media commenti per video: {avg_comments:.1f}")
             
-            # ✅ NUOVO: Statistiche risposte
+            # ✅ NUOVO: Statistiche pagination
+            videos_with_pagination = sum(1 for video in videos if video.get('pagination_used'))
+            if videos_with_pagination > 0:
+                total_collection_time = sum(video.get('collection_duration_seconds', 0) for video in videos)
+                avg_collection_time = total_collection_time / videos_with_pagination if videos_with_pagination else 0
+                logger.info(f"🔄 Video con pagination: {videos_with_pagination}/{total_videos}")
+                logger.info(f"⏱️  Tempo raccolta commenti: {total_collection_time:.1f} secondi totali")
+                logger.info(f"📊 Tempo medio per video: {avg_collection_time:.1f} secondi")
+            
+            # Statistiche risposte
             videos_with_replies = sum(1 for video in videos if video.get('replies_retrieved'))
             if videos_with_replies > 0:
                 total_replies = sum(video.get('total_replies_count', 0) for video in videos)
                 avg_replies = total_replies / videos_with_replies if videos_with_replies else 0
                 logger.info(f"💬➡️ Video con risposte: {videos_with_replies}/{total_videos}")
-                logger.info(f"💭➡️ Risposte totali: {total_replies}")
+                logger.info(f"💭➡️ Risposte totali: {total_replies:,}")
                 logger.info(f"📈➡️ Media risposte per video: {avg_replies:.1f}")
         
-        # Top 3 video più visti
+        # Top 3 video più visti con info pagination
         top_videos = sorted(videos, key=lambda x: x.get('stats', {}).get('views', 0), reverse=True)[:3]
         
         logger.info(f"🏆 Top 3 video più visti:")
@@ -988,34 +1299,36 @@ def print_summary(videos, search_type, search_term, logger):
             transcript_status = "🎙️" if video.get('transcript_available') else "❌"
             comments_status = f"💬{video.get('comments_count', 0)}" if video.get('comments_retrieved') else "❌"
             replies_status = f"➡️{video.get('total_replies_count', 0)}" if video.get('replies_retrieved') else ""
-            logger.info(f"{i+1}. ({views:,} views) @{author} [R:{relevance:.2f}] {transcript_status} {comments_status}{replies_status}: {desc_preview}")
+            # ✅ NUOVO: Indicatore pagination
+            pagination_status = f"🔄{video.get('pagination_mode', 'limited')[0].upper()}" if video.get('pagination_used') else ""
+            
+            logger.info(f"{i+1}. ({views:,} views) @{author} [R:{relevance:.2f}] {transcript_status} {comments_status}{replies_status} {pagination_status}: {desc_preview}")
         
     except Exception as e:
         logger.error(f"⚠️  Errore nel riassunto: {e}")
 
 
 # ================================
-# FUNZIONE PRINCIPALE
+# ✅ FUNZIONE PRINCIPALE AGGIORNATA
 # ================================
 
 async def main():
-    """Funzione principale - TikTok Scraper Refactorizzato con Risposte Commenti"""
+    """✅ AGGIORNATO: Funzione principale con supporto pagination completo"""
     
-    # ✅ USA MODULO CORE per argparse
+    # ✅ USA MODULO CORE per argparse (ora con pagination)
     parser = setup_tiktok_argparse()
     args = parser.parse_args()
     
-    # ✅ USA MODULO CORE per validazioni comuni e TikTok-specifiche
+    # ✅ USA MODULO CORE per validazioni comuni e TikTok-specifiche (ora con pagination)
     args = validate_common_arguments(args, parser)
-    args = validate_tiktok_arguments(args, parser)
+    args = validate_tiktok_arguments(args, parser)  # Include validazioni pagination
     validate_count_argument(args, parser, min_count=5, max_count=100)
     
     # ✅ USA MODULO CORE per logger
     logger = setup_tiktok_logger(args.log_level)
     
-    logger.info("🎵 TIKTOK SCRAPER - Versione Refactorizzata")
-    logger.info("🏗️  Usa moduli core comuni")
-    logger.info("🎯 Features: Rilevanza, Commenti + Risposte, Transcript")
+    logger.info("🎵 TIKTOK SCRAPER - Versione con PAGINATION")
+    logger.info("🔄 Features: Pagination, Rilevanza, Commenti + Risposte, Transcript")
     logger.info("=" * 60)
     
     # Dry run check
@@ -1023,12 +1336,17 @@ async def main():
         logger.info("🧪 DRY RUN MODE - Test configurazione")
         mode = 'hashtag' if args.hashtag else 'user' if args.user else 'trending' if args.trending else 'non specificata'
         target = args.hashtag or args.user or 'trending' if args.trending else 'N/A'
+        
+        # ✅ NUOVO: Info pagination nel dry-run
         extra_info = {
             'Modalità': mode,
             'Target': target,
             'Transcript': 'ATTIVO' if args.add_transcript else 'DISATTIVO',
             'Commenti': 'ATTIVO' if args.add_comments else 'DISATTIVO',
             'Risposte': 'ATTIVO' if (args.add_comments and args.include_replies) else 'DISATTIVO',
+            'Pagination mode': getattr(args, 'pagination_mode', 'limited'),
+            'Max total comments': getattr(args, 'max_total_comments', 'N/A'),
+            'Batch size': getattr(args, 'batch_size', 'N/A'),
             'Soglia rilevanza': f"{args.relevance_threshold} (solo metadata)",
             'Filtro data': args.created_after if getattr(args, 'created_after', None) else 'NESSUNO'
         }
@@ -1100,9 +1418,7 @@ async def main():
                 logger.error("❌ Modalità --auto richiede --hashtag, --user o --trending!")
                 sys.exit(1)
         
-        # ✅ Input già puliti da validate_tiktok_arguments()
-        
-        # 4. Log configurazione finale
+        # 4. Log configurazione finale con pagination
         logger.info(f"🎯 Configurazione finale:")
         logger.info(f"   - Modalità: {search_type}")
         logger.info(f"   - Target: {search_term}")
@@ -1119,12 +1435,32 @@ async def main():
             logger.info(f"   - Transcript: DISATTIVO")
             
         if args.add_comments:
-            if args.include_replies:
-                logger.info(f"   - Commenti + risposte: ATTIVO (max {args.max_comments} commenti, {args.max_replies} risposte)")
-                logger.info(f"   - ⚠️  Tempo elaborazione: +15-45s per video")
-            else:
-                logger.info(f"   - Commenti: ATTIVO (max {args.max_comments} per video)")
+            # ✅ NUOVO: Info dettagliate pagination
+            pagination_mode = getattr(args, 'pagination_mode', 'limited')
+            if pagination_mode == 'limited':
+                logger.info(f"   - Commenti: MODALITÀ LIMITED (max {args.max_comments} per video)")
                 logger.info(f"   - ⚠️  Tempo elaborazione: +5-15s per video")
+            elif pagination_mode == 'adaptive':
+                max_total = getattr(args, 'max_total_comments', 1000)
+                logger.info(f"   - Commenti: MODALITÀ ADAPTIVE (max {max_total} per video)")
+                logger.info(f"   - ⚠️  Tempo elaborazione: +30s-5min per video")
+            elif pagination_mode == 'paginated':
+                logger.info(f"   - Commenti: MODALITÀ PAGINATED (TUTTI i commenti)")
+                logger.info(f"   - ⚠️  Tempo elaborazione: +2-30min per video")
+            elif pagination_mode == 'auto':
+                logger.info(f"   - Commenti: MODALITÀ AUTO (intelligente)")
+                logger.info(f"   - ⚠️  Tempo elaborazione: variabile")
+            
+            if args.include_replies:
+                logger.info(f"   - Risposte: ATTIVATE (max {args.max_replies} per commento)")
+                logger.info(f"   - ⚠️  Tempo aggiuntivo per risposte")
+                
+            # Info batch per pagination
+            if pagination_mode != 'limited':
+                batch_size = getattr(args, 'batch_size', 50)
+                delay = getattr(args, 'delay_between_batches', 2.0)
+                logger.info(f"   - Batch size: {batch_size} commenti/batch")
+                logger.info(f"   - Delay tra batch: {delay}s")
         else:
             logger.info(f"   - Commenti: DISATTIVO")
         
@@ -1172,7 +1508,7 @@ async def main():
                 logger.info("   - Controlla connessione internet")
                 sys.exit(1)
             
-            # 6. Esegui ricerca in base alla modalità
+            # 6. Esegui ricerca in base alla modalità (tutte aggiornate con pagination)
             videos = []
             
             if search_type == 'hashtag':
@@ -1191,7 +1527,7 @@ async def main():
                 logger.info(f"📁 File: {filename}")
                 logger.info(f"📊 Video TikTok raccolti: {len(videos)}")
                 
-                # Messaggi specifici per features
+                # ✅ AGGIORNATO: Messaggi specifici per features + pagination
                 if args.add_transcript:
                     transcript_count = sum(1 for v in videos if v.get('transcript_available'))
                     logger.info(f"🎙️  Transcript ottenuti: {transcript_count}/{len(videos)}")
@@ -1199,11 +1535,20 @@ async def main():
                 if args.add_comments:
                     comments_count = sum(1 for v in videos if v.get('comments_retrieved'))
                     total_comments = sum(v.get('comments_count', 0) for v in videos)
-                    logger.info(f"💬 Commenti ottenuti: {comments_count}/{len(videos)} video ({total_comments} commenti totali)")
+                    pagination_mode = getattr(args, 'pagination_mode', 'limited')
+                    
+                    logger.info(f"💬 Commenti ottenuti: {comments_count}/{len(videos)} video ({total_comments:,} commenti totali)")
+                    logger.info(f"🔄 Modalità pagination: {pagination_mode}")
+                    
+                    if pagination_mode != 'limited':
+                        paginated_count = sum(1 for v in videos if v.get('pagination_used'))
+                        total_time = sum(v.get('collection_duration_seconds', 0) for v in videos)
+                        logger.info(f"📊 Video con pagination: {paginated_count}/{len(videos)}")
+                        logger.info(f"⏱️  Tempo raccolta commenti: {total_time:.1f} secondi")
                     
                     if args.include_replies:
                         total_replies = sum(v.get('total_replies_count', 0) for v in videos)
-                        logger.info(f"💬➡️ Risposte ottenute: {total_replies} risposte totali")
+                        logger.info(f"💬➡️ Risposte ottenute: {total_replies:,} risposte totali")
                 
                 # Messaggi specifici per modalità
                 if search_type == 'hashtag':
