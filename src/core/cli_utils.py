@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Core CLI Utils - Argparse patterns comuni + PAGINATION
-Versione aggiornata con supporto pagination commenti TikTok
+Core CLI Utils - Argparse patterns comuni + PAGINATION + MULTIPLE USERS
+Versione aggiornata con supporto pagination commenti TikTok e multiple users
 """
 
 import os
@@ -260,6 +260,84 @@ def clean_username_input(username_input, parser):
     return cleaned
 
 
+def load_users_from_file(users_file_path, parser):
+    """
+    ✅ NUOVO: Carica lista utenti da file
+    
+    Args:
+        users_file_path (str): Percorso al file utenti
+        parser: Parser per errori
+    
+    Returns:
+        list: Lista username puliti
+    """
+    
+    if not users_file_path:
+        return []
+    
+    try:
+        if not os.path.exists(users_file_path):
+            parser.error(f"❌ File utenti non trovato: {users_file_path}")
+        
+        with open(users_file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        users = []
+        for i, line in enumerate(lines, 1):
+            line = line.strip()
+            
+            # Salta righe vuote e commenti
+            if not line or line.startswith('#'):
+                continue
+            
+            # Supporta formati:
+            # username
+            # @username  
+            # https://www.tiktok.com/@username
+            
+            if line.startswith('https://'):
+                # Estrai username da URL TikTok
+                if 'tiktok.com/@' in line:
+                    username = line.split('@')[-1].split('/')[0].split('?')[0]
+                else:
+                    parser.error(f"❌ URL non valido alla riga {i}: {line}")
+            else:
+                # Username diretto
+                username = line.lstrip('@')
+            
+            # Pulisci e valida
+            username = username.strip()
+            if not username:
+                continue
+                
+            # Valida formato username (lettere, numeri, underscore, punto)
+            import re
+            if not re.match(r'^[a-zA-Z0-9._-]+$', username):
+                parser.error(f"❌ Username non valido alla riga {i}: {username}")
+            
+            users.append(username)
+        
+        if not users:
+            parser.error(f"❌ Nessun username valido trovato in {users_file_path}")
+        
+        # Rimuovi duplicati mantenendo ordine
+        unique_users = []
+        seen = set()
+        for user in users:
+            if user not in seen:
+                unique_users.append(user)
+                seen.add(user)
+        
+        return unique_users
+        
+    except FileNotFoundError:
+        parser.error(f"❌ File utenti non trovato: {users_file_path}")
+    except UnicodeDecodeError:
+        parser.error(f"❌ Errore encoding file {users_file_path} - usa UTF-8")
+    except Exception as e:
+        parser.error(f"❌ Errore lettura file utenti: {e}")
+
+
 def check_auto_mode_requirements(args, parser, required_fields):
     """
     Verifica che modalità auto abbia tutti i campi richiesti
@@ -318,14 +396,14 @@ def print_configuration_summary(args, extra_info=None):
 
 def setup_tiktok_argparse():
     """
-    ✅ AGGIORNATO: Crea parser TikTok con argomenti comuni + specifici + PAGINATION
+    ✅ AGGIORNATO: Crea parser TikTok con argomenti comuni + specifici + PAGINATION + MULTIPLE USERS
     
     Returns:
-        ArgumentParser: Parser configurato per TikTok con pagination
+        ArgumentParser: Parser configurato per TikTok con tutte le features
     """
     
     parser = argparse.ArgumentParser(
-        description='🎵 TikTok Scraper avanzato con PAGINATION, rilevanza, commenti e transcript',
+        description='🎵 TikTok Scraper avanzato con PAGINATION, MULTIPLE USERS, rilevanza, commenti e transcript',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
@@ -336,7 +414,7 @@ def setup_tiktok_argparse():
     # ✅ NUOVO: Argomenti pagination
     add_pagination_arguments(parser)
     
-    # Modalità di ricerca TikTok (mutuamente esclusive)
+    # ✅ AGGIORNATO: Modalità di ricerca TikTok (mutuamente esclusive + multiple users)
     search_group = parser.add_mutually_exclusive_group(required=False)
     
     search_group.add_argument(
@@ -349,6 +427,12 @@ def setup_tiktok_argparse():
         '--user', '-u',
         type=str,
         help='Username TikTok da cui prendere video'
+    )
+    
+    search_group.add_argument(
+        '--users-file',
+        type=str,
+        help='File con lista utenti TikTok (uno per riga, supporta URL)'
     )
     
     search_group.add_argument(
@@ -402,6 +486,25 @@ def setup_tiktok_argparse():
         type=int,
         default=3,
         help='Numero massimo risposte per commento (default: 3)'
+    )
+    
+    # ✅ NUOVO: Parametri specifici per multiple users
+    parser.add_argument(
+        '--count-per-user',
+        type=int,
+        help='Video per utente quando usi --users-file (default: usa --count)'
+    )
+    
+    parser.add_argument(
+        '--parallel-users',
+        action='store_true',
+        help='Elabora utenti in parallelo (più veloce ma più carico API)'
+    )
+    
+    parser.add_argument(
+        '--stop-on-error',
+        action='store_true',
+        help='Ferma tutto se un utente fallisce (default: continua con gli altri)'
     )
     
     # Filtri video TikTok
@@ -461,16 +564,42 @@ def setup_tiktok_argparse():
     
 def validate_tiktok_arguments(args, parser):
     """
-    ✅ AGGIORNATO: Validazioni specifiche TikTok + PAGINATION
+    ✅ AGGIORNATO: Validazioni specifiche TikTok + PAGINATION + MULTIPLE USERS
     
     Args:
         args: Argomenti parsati
         parser: Parser per errori
     """
     
-    # Validazione modalità auto
-    if args.auto and not (args.hashtag or args.user or args.trending):
-        parser.error("❌ Modalità --auto richiede --hashtag, --user o --trending!")
+    # ✅ AGGIORNATO: Validazione modalità auto (ora include users-file)
+    if args.auto and not (args.hashtag or args.user or args.users_file or args.trending):
+        parser.error("❌ Modalità --auto richiede --hashtag, --user, --users-file o --trending!")
+    
+    # ✅ NUOVO: Carica e valida utenti da file
+    args.users_list = []
+    if args.users_file:
+        args.users_list = load_users_from_file(args.users_file, parser)
+        
+        # Log numero utenti caricati
+        print(f"📋 Caricati {len(args.users_list)} utenti da {args.users_file}")
+        
+        # Validazione count-per-user
+        if args.count_per_user:
+            if args.count_per_user < 1 or args.count_per_user > 50:
+                parser.error(f"❌ count-per-user deve essere tra 1 e 50 (ricevuto: {args.count_per_user})")
+        else:
+            # Usa count normale se count-per-user non specificato
+            args.count_per_user = args.count
+            
+        # Warning per troppe richieste
+        total_requests = len(args.users_list) * args.count_per_user
+        if total_requests > 200 and not args.auto:
+            print(f"⚠️  ATTENZIONE: {len(args.users_list)} utenti × {args.count_per_user} video = {total_requests} video totali")
+            print("⚠️  Questo può richiedere molto tempo e molte richieste API")
+            if not args.auto:
+                confirm = input("Continuare? [y/N]: ").strip().lower()
+                if confirm != 'y':
+                    parser.error("Operazione annullata dall'utente")
     
     # Validazione max-comments
     if args.max_comments < 1 or args.max_comments > 50:

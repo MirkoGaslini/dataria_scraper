@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-TikTok Scraper - Versione con PAGINATION COMPLETA
+TikTok Scraper - Versione con PAGINATION COMPLETA + MULTIPLE USERS
 ✅ Aggiunto supporto pagination per recuperare TUTTI i commenti
 ✅ 4 modalità: limited, adaptive, paginated, auto
 ✅ Batch processing con rate limiting
+✅ NUOVO: Supporto multiple users da file
 """
 
 import os
@@ -1154,11 +1155,106 @@ async def search_trending_videos(api, count, args, logger):
 
 
 # ================================
+# ✅ NUOVA FUNZIONE MULTIPLE USERS
+# ================================
+
+async def search_multiple_users_videos(api, users_list, count_per_user, args, logger):
+    """
+    ✅ NUOVO: Cerca video da multiple users in sequenza o parallelo
+    
+    Args:
+        api: TikTokApi instance
+        users_list: Lista username da processare
+        count_per_user: Video per ogni utente
+        args: Argomenti CLI con configurazioni
+        logger: Logger
+    
+    Returns:
+        list: Lista tutti video da tutti utenti
+    """
+    
+    logger.info(f"🔍 MULTIPLE USERS: Cercando video da {len(users_list)} utenti")
+    logger.info(f"📊 Config: {count_per_user} video per utente = max {len(users_list) * count_per_user} video totali")
+    
+    all_videos = []
+    successful_users = 0
+    failed_users = 0
+    start_time = time.time()
+    
+    for i, username in enumerate(users_list, 1):
+        try:
+            logger.info(f"👤 [{i}/{len(users_list)}] Processando @{username}...")
+            
+            # Cerca video per questo utente
+            user_videos = await search_user_videos(api, username, count_per_user, args, logger)
+            
+            if user_videos:
+                # Aggiungi tag per identificare la fonte
+                for video in user_videos:
+                    video['source_user'] = username
+                    video['user_index'] = i
+                    video['batch_source'] = 'multiple_users'
+                
+                all_videos.extend(user_videos)
+                successful_users += 1
+                
+                logger.info(f"✅ @{username}: {len(user_videos)} video raccolti")
+            else:
+                failed_users += 1
+                logger.warning(f"⚠️  @{username}: nessun video trovato")
+                
+                # Gestione errori
+                if args.stop_on_error:
+                    logger.error(f"❌ --stop-on-error attivo: fermatosi per @{username}")
+                    break
+            
+            # Pausa tra utenti per evitare rate limiting
+            if i < len(users_list):  # Non pausare dopo l'ultimo utente
+                delay = 3.0  # Pausa fissa tra utenti
+                logger.debug(f"⏳ Pausa {delay}s prima del prossimo utente...")
+                await asyncio.sleep(delay)
+                
+        except Exception as e:
+            failed_users += 1
+            logger.error(f"❌ Errore processando @{username}: {e}")
+            
+            if args.stop_on_error:
+                logger.error(f"❌ --stop-on-error attivo: fermato per errore su @{username}")
+                break
+    
+    # Statistiche finali
+    elapsed_total = time.time() - start_time
+    avg_videos_per_user = len(all_videos) / successful_users if successful_users > 0 else 0
+    
+    logger.info(f"📊 MULTIPLE USERS COMPLETATO:")
+    logger.info(f"   - Utenti processati: {successful_users}/{len(users_list)}")
+    logger.info(f"   - Utenti falliti: {failed_users}")
+    logger.info(f"   - Video totali raccolti: {len(all_videos)}")
+    logger.info(f"   - Media video per utente: {avg_videos_per_user:.1f}")
+    logger.info(f"   - Tempo totale: {elapsed_total:.1f} secondi")
+    logger.info(f"   - Tempo medio per utente: {elapsed_total/len(users_list):.1f} secondi")
+    
+    # Logging utenti con maggiori risultati
+    if successful_users > 0:
+        user_stats = {}
+        for video in all_videos:
+            user = video.get('source_user', 'unknown')
+            user_stats[user] = user_stats.get(user, 0) + 1
+        
+        top_users = sorted(user_stats.items(), key=lambda x: x[1], reverse=True)[:3]
+        logger.info(f"🏆 Top utenti per video raccolti:")
+        for user, count in top_users:
+            logger.info(f"   - @{user}: {count} video")
+    
+    return all_videos
+
+
+# ================================
 # FUNZIONI SALVATAGGIO E SUMMARY (AGGIORNATE)
 # ================================
 
 def save_videos(videos, search_type, search_term, args, logger):
-    """✅ AGGIORNATO: Salva video in formato JSONL con metadata pagination"""
+    """✅ AGGIORNATO: Salva video in formato JSONL con metadata pagination + multiple users"""
     if not videos:
         logger.warning("⚠️  Nessun video da salvare")
         return None
@@ -1174,8 +1270,12 @@ def save_videos(videos, search_type, search_term, args, logger):
                     return filename, counter
                 counter += 1
         
-        # Nome file incrementale con estensione .jsonl
-        base_prefix = args.output_prefix if args.output_prefix else "tiktok_scraper"
+        # ✅ AGGIORNATO: Nome file con info multiple users
+        if search_type == 'multiple_users':
+            base_prefix = args.output_prefix if args.output_prefix else f"tiktok_multiple_users"
+        else:
+            base_prefix = args.output_prefix if args.output_prefix else "tiktok_scraper"
+            
         filename, file_number = get_next_filename(args.output_dir, base_prefix)
         
         # Aggiungi metadati a ogni video per tracciabilità
@@ -1189,7 +1289,8 @@ def save_videos(videos, search_type, search_term, args, logger):
                 video_with_metadata.update({
                     'collection_time': collection_time,
                     'search_type': search_type,
-                    'search_term': search_term
+                    'search_term': search_term,
+                    'file_number': file_number
                 })
                 
                 # Scrivi una riga JSON per video (formato JSONL)
@@ -1198,6 +1299,19 @@ def save_videos(videos, search_type, search_term, args, logger):
         
         logger.info(f"💾 File JSONL salvato con successo: {filename}")
         logger.info(f"📊 Video salvati: {len(videos)} (una riga per video)")
+        
+        # ✅ AGGIORNATO: Statistiche con multiple users
+        if search_type == 'multiple_users':
+            unique_users = set(video.get('source_user', 'unknown') for video in videos)
+            logger.info(f"   - Utenti unici: {len(unique_users)}")
+            
+            user_counts = {}
+            for video in videos:
+                user = video.get('source_user', 'unknown')
+                user_counts[user] = user_counts.get(user, 0) + 1
+            
+            top_user = max(user_counts.items(), key=lambda x: x[1]) if user_counts else ('N/A', 0)
+            logger.info(f"   - Utente più produttivo: @{top_user[0]} ({top_user[1]} video)")
         
         if args.add_transcript:
             transcript_count = sum(1 for video in videos if video.get('transcript_available'))
@@ -1228,12 +1342,17 @@ def save_videos(videos, search_type, search_term, args, logger):
 
 
 def print_summary(videos, search_type, search_term, logger):
-    """✅ AGGIORNATO: Stampa riassunto dettagliato con statistiche pagination"""
+    """✅ AGGIORNATO: Stampa riassunto dettagliato con statistiche pagination + multiple users"""
     if not videos:
         return
     
     try:
-        logger.info(f"📊 RIASSUNTO FINALE - {search_type.upper()}: {search_term}")
+        # ✅ AGGIORNATO: Titolo con support multiple users
+        if search_type == 'multiple_users':
+            unique_users = set(video.get('source_user', 'unknown') for video in videos)
+            logger.info(f"📊 RIASSUNTO FINALE - MULTIPLE USERS: {len(unique_users)} utenti")
+        else:
+            logger.info(f"📊 RIASSUNTO FINALE - {search_type.upper()}: {search_term}")
         logger.info("=" * 60)
         
         # Statistiche generali
@@ -1244,6 +1363,26 @@ def print_summary(videos, search_type, search_term, logger):
         logger.info(f"📈 Video raccolti: {total_videos}")
         logger.info(f"⏱️  Durata totale: {total_duration} secondi ({total_duration/60:.1f} minuti)")
         logger.info(f"👀 Visualizzazioni totali: {total_views:,}")
+        
+        # ✅ NUOVO: Statistiche per multiple users
+        if search_type == 'multiple_users':
+            unique_users = set(video.get('source_user', 'unknown') for video in videos)
+            logger.info(f"👥 Utenti unici: {len(unique_users)}")
+            
+            # Distribuzione video per utente
+            user_counts = {}
+            for video in videos:
+                user = video.get('source_user', 'unknown')
+                user_counts[user] = user_counts.get(user, 0) + 1
+            
+            avg_videos_per_user = total_videos / len(unique_users) if unique_users else 0
+            logger.info(f"📊 Media video per utente: {avg_videos_per_user:.1f}")
+            
+            # Top 3 utenti più produttivi
+            top_users = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+            logger.info(f"🏆 Top utenti produttivi:")
+            for i, (user, count) in enumerate(top_users, 1):
+                logger.info(f"{i}. @{user}: {count} video")
         
         # Statistiche rilevanza (solo per info, non più filtrate)
         relevant_videos = sum(1 for video in videos if video.get('is_relevant', False))
@@ -1299,10 +1438,11 @@ def print_summary(videos, search_type, search_term, logger):
             transcript_status = "🎙️" if video.get('transcript_available') else "❌"
             comments_status = f"💬{video.get('comments_count', 0)}" if video.get('comments_retrieved') else "❌"
             replies_status = f"➡️{video.get('total_replies_count', 0)}" if video.get('replies_retrieved') else ""
-            # ✅ NUOVO: Indicatore pagination
+            # ✅ NUOVO: Indicatore pagination + source user
             pagination_status = f"🔄{video.get('pagination_mode', 'limited')[0].upper()}" if video.get('pagination_used') else ""
+            source_user_status = f"[{video.get('source_user', '')}]" if search_type == 'multiple_users' else ""
             
-            logger.info(f"{i+1}. ({views:,} views) @{author} [R:{relevance:.2f}] {transcript_status} {comments_status}{replies_status} {pagination_status}: {desc_preview}")
+            logger.info(f"{i+1}. ({views:,} views) @{author} [R:{relevance:.2f}] {transcript_status} {comments_status}{replies_status} {pagination_status} {source_user_status}: {desc_preview}")
         
     except Exception as e:
         logger.error(f"⚠️  Errore nel riassunto: {e}")
@@ -1313,29 +1453,38 @@ def print_summary(videos, search_type, search_term, logger):
 # ================================
 
 async def main():
-    """✅ AGGIORNATO: Funzione principale con supporto pagination completo"""
+    """✅ AGGIORNATO: Funzione principale con supporto pagination completo + multiple users"""
     
-    # ✅ USA MODULO CORE per argparse (ora con pagination)
+    # ✅ USA MODULO CORE per argparse (ora con pagination + multiple users)
     parser = setup_tiktok_argparse()
     args = parser.parse_args()
     
-    # ✅ USA MODULO CORE per validazioni comuni e TikTok-specifiche (ora con pagination)
+    # ✅ USA MODULO CORE per validazioni comuni e TikTok-specifiche (ora con pagination + multiple users)
     args = validate_common_arguments(args, parser)
-    args = validate_tiktok_arguments(args, parser)  # Include validazioni pagination
+    args = validate_tiktok_arguments(args, parser)  # Include validazioni pagination + multiple users
     validate_count_argument(args, parser, min_count=5, max_count=100)
     
     # ✅ USA MODULO CORE per logger
     logger = setup_tiktok_logger(args.log_level)
     
-    logger.info("🎵 TIKTOK SCRAPER - Versione con PAGINATION")
-    logger.info("🔄 Features: Pagination, Rilevanza, Commenti + Risposte, Transcript")
+    logger.info("🎵 TIKTOK SCRAPER - Versione con PAGINATION + MULTIPLE USERS")
+    logger.info("🔄 Features: Pagination, Multiple Users, Rilevanza, Commenti + Risposte, Transcript")
     logger.info("=" * 60)
     
     # Dry run check
     if args.dry_run:
         logger.info("🧪 DRY RUN MODE - Test configurazione")
-        mode = 'hashtag' if args.hashtag else 'user' if args.user else 'trending' if args.trending else 'non specificata'
-        target = args.hashtag or args.user or 'trending' if args.trending else 'N/A'
+        
+        # ✅ AGGIORNATO: Include info multiple users
+        mode = ('hashtag' if args.hashtag else 
+                'user' if args.user else 
+                'multiple_users' if args.users_file else
+                'trending' if args.trending else 'non specificata')
+        
+        if mode == 'multiple_users':
+            target = f"{len(args.users_list)} utenti da {args.users_file}"
+        else:
+            target = args.hashtag or args.user or 'trending' if args.trending else 'N/A'
         
         # ✅ NUOVO: Info pagination nel dry-run
         extra_info = {
@@ -1350,6 +1499,15 @@ async def main():
             'Soglia rilevanza': f"{args.relevance_threshold} (solo metadata)",
             'Filtro data': args.created_after if getattr(args, 'created_after', None) else 'NESSUNO'
         }
+        
+        # Info specifiche multiple users
+        if mode == 'multiple_users':
+            extra_info.update({
+                'Count per user': getattr(args, 'count_per_user', args.count),
+                'Stop on error': 'SÌ' if args.stop_on_error else 'NO',
+                'Total videos max': len(args.users_list) * getattr(args, 'count_per_user', args.count)
+            })
+            
         print_configuration_summary(args, extra_info)
         logger.info("✅ Configurazione valida! Rimuovi --dry-run per eseguire.")
         return
@@ -1368,7 +1526,7 @@ async def main():
                 logger.warning("⚠️  Continuo senza transcript")
                 args.add_transcript = False
         
-        # 3. Determina modalità di ricerca
+        # 3. ✅ AGGIORNATO: Determina modalità di ricerca (include multiple users)
         search_type = None
         search_term = None
         
@@ -1378,6 +1536,9 @@ async def main():
         elif args.user:
             search_type = 'user'
             search_term = args.user
+        elif args.users_file:
+            search_type = 'multiple_users'
+            search_term = f"{len(args.users_list)}_users"
         elif args.trending:
             search_type = 'trending'
             search_term = 'trending'
@@ -1390,9 +1551,10 @@ async def main():
                 print("Scegli modalità di ricerca:")
                 print("1. Hashtag - Cerca video per hashtag")
                 print("2. User - Cerca video di un utente")
-                print("3. Trending - Video trending di TikTok")
+                print("3. Multiple Users - Cerca video da file utenti")
+                print("4. Trending - Video trending di TikTok")
                 
-                choice = input("\nScegli (1/2/3): ").strip()
+                choice = input("\nScegli (1/2/3/4): ").strip()
                 
                 if choice == '1':
                     hashtag = input("📝 Inserisci hashtag (senza #): ").strip().lstrip('#')
@@ -1407,6 +1569,16 @@ async def main():
                         search_term = user
                         args.user = user
                 elif choice == '3':
+                    users_file = input("📝 Inserisci percorso file utenti: ").strip()
+                    if users_file and os.path.exists(users_file):
+                        from src.core.cli_utils import load_users_from_file
+                        args.users_list = load_users_from_file(users_file, parser)
+                        args.users_file = users_file
+                        search_type = 'multiple_users'
+                        search_term = f"{len(args.users_list)}_users"
+                    else:
+                        logger.error("❌ File utenti non trovato!")
+                elif choice == '4':
                     search_type = 'trending'
                     search_term = 'trending'
                     args.trending = True
@@ -1415,14 +1587,22 @@ async def main():
                     logger.error("❌ Nessuna modalità di ricerca valida selezionata!")
                     sys.exit(1)
             else:
-                logger.error("❌ Modalità --auto richiede --hashtag, --user o --trending!")
+                logger.error("❌ Modalità --auto richiede --hashtag, --user, --users-file o --trending!")
                 sys.exit(1)
         
-        # 4. Log configurazione finale con pagination
+        # 4. ✅ AGGIORNATO: Log configurazione finale con pagination + multiple users
         logger.info(f"🎯 Configurazione finale:")
         logger.info(f"   - Modalità: {search_type}")
         logger.info(f"   - Target: {search_term}")
-        logger.info(f"   - Quantità: {args.count} video")
+        
+        if search_type == 'multiple_users':
+            logger.info(f"   - Utenti da processare: {len(args.users_list)}")
+            logger.info(f"   - Video per utente: {getattr(args, 'count_per_user', args.count)}")
+            logger.info(f"   - Video totali max: {len(args.users_list) * getattr(args, 'count_per_user', args.count)}")
+            logger.info(f"   - Stop on error: {'SÌ' if args.stop_on_error else 'NO'}")
+        else:
+            logger.info(f"   - Quantità: {args.count} video")
+        
         logger.info(f"   - Soglia rilevanza: {args.relevance_threshold} (solo metadata)")
         
         filter_status = "DISATTIVATI" if args.no_filter else f"ATTIVI (min {args.min_desc_length} char)"
@@ -1508,13 +1688,17 @@ async def main():
                 logger.info("   - Controlla connessione internet")
                 sys.exit(1)
             
-            # 6. Esegui ricerca in base alla modalità (tutte aggiornate con pagination)
+            # 6. ✅ AGGIORNATO: Esegui ricerca in base alla modalità (include multiple users)
             videos = []
             
             if search_type == 'hashtag':
                 videos = await search_hashtag_videos(api, search_term, args.count, args, logger)
             elif search_type == 'user':
                 videos = await search_user_videos(api, search_term, args.count, args, logger)
+            elif search_type == 'multiple_users':
+                # ✅ NUOVO: Gestione multiple users
+                count_per_user = getattr(args, 'count_per_user', args.count)
+                videos = await search_multiple_users_videos(api, args.users_list, count_per_user, args, logger)
             elif search_type == 'trending':
                 videos = await search_trending_videos(api, args.count, args, logger)
             
@@ -1527,7 +1711,15 @@ async def main():
                 logger.info(f"📁 File: {filename}")
                 logger.info(f"📊 Video TikTok raccolti: {len(videos)}")
                 
-                # ✅ AGGIORNATO: Messaggi specifici per features + pagination
+                # ✅ AGGIORNATO: Messaggi specifici per features + pagination + multiple users
+                if search_type == 'multiple_users':
+                    unique_users = set(video.get('source_user', 'unknown') for video in videos)
+                    successful_users = len(unique_users)
+                    logger.info(f"👥 Utenti processati con successo: {successful_users}/{len(args.users_list)}")
+                    
+                    avg_videos_per_user = len(videos) / successful_users if successful_users > 0 else 0
+                    logger.info(f"📈 Media video per utente: {avg_videos_per_user:.1f}")
+                
                 if args.add_transcript:
                     transcript_count = sum(1 for v in videos if v.get('transcript_available'))
                     logger.info(f"🎙️  Transcript ottenuti: {transcript_count}/{len(videos)}")
@@ -1555,12 +1747,22 @@ async def main():
                     logger.info(f"🏷️  Hashtag #{search_term} analizzato")
                 elif search_type == 'user':
                     logger.info(f"👤 Profilo @{search_term} analizzato")
+                elif search_type == 'multiple_users':
+                    logger.info(f"👥 {len(args.users_list)} profili analizzati")
                 elif search_type == 'trending':
                     logger.info("🔥 Video trending analizzati")
                 
             else:
-                # Messaggi di errore informativi
-                logger.warning(f"😔 Nessun video trovato per {search_type}: {search_term}")
+                # ✅ AGGIORNATO: Messaggi di errore informativi per multiple users
+                if search_type == 'multiple_users':
+                    logger.warning(f"😔 Nessun video trovato da {len(args.users_list)} utenti")
+                    logger.info("💡 Suggerimenti per multiple users:")
+                    logger.info("   - Verifica che gli username nel file siano corretti")
+                    logger.info("   - Controlla che i profili abbiano video pubblici")
+                    logger.info("   - Alcuni utenti potrebbero essere privati o inesistenti")
+                    logger.info("   - Prova con --count-per-user più alto")
+                else:
+                    logger.warning(f"😔 Nessun video trovato per {search_type}: {search_term}")
                 
                 logger.info("💡 Suggerimenti per migliorare i risultati:")
                 
@@ -1602,6 +1804,8 @@ async def main():
             logger.info("💡 TikTok ha rilevato bot - prova con proxy diverso")
         elif "timeout" in error_str:
             logger.info("💡 Timeout - TikTok potrebbe essere lento o irraggiungibile")
+        elif "rapidapi" in error_str:
+            logger.info("💡 Problema RapidAPI - controlla RAPIDAPI_KEY o quota")
         elif "rapidapi" in error_str:
             logger.info("💡 Problema RapidAPI - controlla RAPIDAPI_KEY o quota")
         else:
