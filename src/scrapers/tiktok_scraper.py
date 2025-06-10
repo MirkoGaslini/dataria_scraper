@@ -164,20 +164,7 @@ async def get_all_video_comments_paginated(api, video_id, include_replies=False,
                                          max_total_comments=None, batch_size=50, 
                                          delay_between_batches=2, logger=None):
     """
-    ✅ NUOVO: Recupera TUTTI i commenti di un video usando pagination
-    
-    Args:
-        api: TikTokApi instance
-        video_id: ID del video
-        include_replies: Se includere risposte ai commenti
-        max_replies: Max risposte per commento
-        max_total_comments: Limite massimo commenti totali (None = illimitato)
-        batch_size: Commenti per batch/pagina (default: 50)
-        delay_between_batches: Secondi di attesa tra batch (anti rate-limit)
-        logger: Logger per debug
-    
-    Returns:
-        list: Lista completa di tutti i commenti con metadata pagination
+    ✅ AGGIORNATO: Recupera TUTTI i commenti con gestione timeout per fine commenti
     """
     try:
         if not video_id or video_id == 'unknown':
@@ -194,82 +181,121 @@ async def get_all_video_comments_paginated(api, video_id, include_replies=False,
         total_processed = 0
         start_time = time.time()
         
-        # Pagination loop - continua fino a che ci sono commenti
-        async for comment in video_obj.comments(count=max_total_comments or 999999):
-            try:
-                comment_dict = comment.as_dict
-                comment_text = comment_dict.get('text', '').strip()
-                
-                # Filtra commenti vuoti
-                if comment_text and len(comment_text) >= 2:
-                    # Struttura commento base
-                    comment_obj = {
-                        "text": comment_text,
-                        "comment_id": comment_dict.get('cid', 'unknown'),
-                        "replies_count": 0,
-                        "has_replies": False,
-                        "replies": [],
-                        "batch_number": batch_count + 1,  # Metadata pagination
-                        "comment_index": len(all_comments) + 1  # Posizione globale
-                    }
+        # ✅ NUOVO: Tracking per rilevare fine commenti
+        comments_found_in_last_batch = 0
+        stale_batches = 0  # Batch consecutivi senza nuovi commenti
+        max_stale_batches = 3  # Dopo 3 batch vuoti, fermati
+        last_comment_time = time.time()
+        max_wait_time = 30.0  # Max 30 secondi senza nuovi commenti
+        
+        # Pagination loop con timeout intelligente
+        try:
+            async for comment in video_obj.comments(count=max_total_comments or 999999):
+                try:
+                    comment_dict = comment.as_dict
+                    comment_text = comment_dict.get('text', '').strip()
                     
-                    # Recupera risposte se richiesto
-                    if include_replies:
-                        try:
-                            replies_list = []
-                            reply_count = 0
-                            
-                            async for reply in comment.replies(count=max_replies * 2):
-                                try:
-                                    reply_dict = reply.as_dict
-                                    reply_text = reply_dict.get('text', '').strip()
-                                    
-                                    if reply_text and len(reply_text) >= 2:
-                                        reply_obj = {
-                                            "text": reply_text,
-                                            "reply_id": reply_dict.get('cid', 'unknown')
-                                        }
-                                        replies_list.append(reply_obj)
-                                        reply_count += 1
+                    # Filtra commenti vuoti
+                    if comment_text and len(comment_text) >= 2:
+                        # ✅ NUOVO: Reset timeout quando trova commenti
+                        last_comment_time = time.time()
+                        comments_found_in_last_batch += 1
+                        stale_batches = 0  # Reset contatore batch vuoti
+                        
+                        # Struttura commento base
+                        comment_obj = {
+                            "text": comment_text,
+                            "comment_id": comment_dict.get('cid', 'unknown'),
+                            "replies_count": 0,
+                            "has_replies": False,
+                            "replies": [],
+                            "batch_number": batch_count + 1,
+                            "comment_index": len(all_comments) + 1
+                        }
+                        
+                        # Recupera risposte se richiesto
+                        if include_replies:
+                            try:
+                                replies_list = []
+                                reply_count = 0
+                                
+                                async for reply in comment.replies(count=max_replies * 2):
+                                    try:
+                                        reply_dict = reply.as_dict
+                                        reply_text = reply_dict.get('text', '').strip()
                                         
-                                        if reply_count >= max_replies:
-                                            break
+                                        if reply_text and len(reply_text) >= 2:
+                                            reply_obj = {
+                                                "text": reply_text,
+                                                "reply_id": reply_dict.get('cid', 'unknown')
+                                            }
+                                            replies_list.append(reply_obj)
+                                            reply_count += 1
                                             
-                                except Exception as e:
-                                    logger.debug(f"⚠️  Errore elaborazione singola risposta: {e}")
-                                    continue
-                            
-                            comment_obj["replies"] = replies_list
-                            comment_obj["replies_count"] = len(replies_list)
-                            comment_obj["has_replies"] = len(replies_list) > 0
-                            
-                        except Exception as e:
-                            logger.debug(f"⚠️  Errore recupero risposte: {e}")
-                    
-                    all_comments.append(comment_obj)
-                    total_processed += 1
-                    
-                    # Progress logging ogni batch_size commenti
-                    if total_processed % batch_size == 0:
-                        batch_count += 1
-                        elapsed = time.time() - start_time
-                        rate = total_processed / elapsed if elapsed > 0 else 0
+                                            if reply_count >= max_replies:
+                                                break
+                                                
+                                    except Exception as e:
+                                        logger.debug(f"⚠️  Errore elaborazione singola risposta: {e}")
+                                        continue
+                                
+                                comment_obj["replies"] = replies_list
+                                comment_obj["replies_count"] = len(replies_list)
+                                comment_obj["has_replies"] = len(replies_list) > 0
+                                
+                            except Exception as e:
+                                logger.debug(f"⚠️  Errore recupero risposte: {e}")
                         
-                        logger.info(f"📦 Batch #{batch_count}: {total_processed} commenti | {rate:.1f}/sec | {elapsed:.1f}s")
+                        all_comments.append(comment_obj)
+                        total_processed += 1
                         
-                        # Delay anti rate-limit tra batch
-                        if delay_between_batches > 0:
-                            logger.debug(f"⏳ Pausa {delay_between_batches}s...")
-                            await asyncio.sleep(delay_between_batches)
+                        # Progress logging ogni batch_size commenti
+                        if total_processed % batch_size == 0:
+                            batch_count += 1
+                            elapsed = time.time() - start_time
+                            rate = total_processed / elapsed if elapsed > 0 else 0
+                            
+                            logger.info(f"📦 Batch #{batch_count}: {total_processed} commenti | {rate:.1f}/sec | {elapsed:.1f}s")
+                            logger.debug(f"🔍 Commenti in questo batch: {comments_found_in_last_batch}")
+                            
+                            # ✅ NUOVO: Check se il batch è stato vuoto
+                            if comments_found_in_last_batch == 0:
+                                stale_batches += 1
+                                logger.debug(f"⚠️  Batch vuoto #{stale_batches}/{max_stale_batches}")
+                                
+                                if stale_batches >= max_stale_batches:
+                                    logger.info(f"🛑 STOP: {max_stale_batches} batch consecutivi senza commenti - probabilmente finiti")
+                                    break
+                            
+                            # Reset contatore per prossimo batch
+                            comments_found_in_last_batch = 0
+                            
+                            # Delay anti rate-limit tra batch
+                            if delay_between_batches > 0:
+                                logger.debug(f"⏳ Pausa {delay_between_batches}s...")
+                                await asyncio.sleep(delay_between_batches)
+                        
+                        # Limite massimo raggiunto
+                        if max_total_comments and total_processed >= max_total_comments:
+                            logger.info(f"🛑 Limite massimo raggiunto: {max_total_comments} commenti")
+                            break
                     
-                    # Limite massimo raggiunto
-                    if max_total_comments and total_processed >= max_total_comments:
-                        logger.info(f"🛑 Limite massimo raggiunto: {max_total_comments} commenti")
+                    # ✅ NUOVO: Timeout check - se non trova commenti da troppo tempo
+                    current_time = time.time()
+                    if current_time - last_comment_time > max_wait_time:
+                        logger.info(f"🛑 TIMEOUT: Nessun commento da {max_wait_time}s - probabilmente finiti")
                         break
-                        
-            except Exception as e:
-                logger.debug(f"⚠️  Errore elaborazione commento: {e}")
-                continue
+                            
+                except Exception as e:
+                    logger.debug(f"⚠️  Errore elaborazione commento: {e}")
+                    continue
+                    
+        except Exception as e:
+            # ✅ NUOVO: Gestione errore pagination (normale quando finiscono i commenti)
+            if "undefined" in str(e).lower() or "cannot read properties" in str(e).lower():
+                logger.info(f"✅ Fine commenti rilevata (errore normale): video probabilmente esaurito")
+            else:
+                logger.warning(f"⚠️  Errore pagination inaspettato: {e}")
         
         # Statistiche finali
         elapsed_total = time.time() - start_time
@@ -289,7 +315,8 @@ async def get_all_video_comments_paginated(api, video_id, include_replies=False,
                 "total_batches": batch_count + 1,
                 "collection_duration_seconds": round(elapsed_total, 2),
                 "average_rate_per_second": round(avg_rate, 2),
-                "collection_timestamp": datetime.now().isoformat()
+                "collection_timestamp": datetime.now().isoformat(),
+                "termination_reason": "normal_completion"
             }
         
         return all_comments
