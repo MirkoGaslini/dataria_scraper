@@ -28,6 +28,7 @@ from src.core.cli_utils import (
     validate_count_argument, clean_hashtag_input, clean_username_input,
     check_auto_mode_requirements, print_configuration_summary
 )
+from src.core.file_handlers import save_and_upload_videos
 
 # Carica le variabili d'ambiente dal file .env
 load_dotenv('.env')
@@ -1731,7 +1732,7 @@ async def main():
             
             # 7. Salva e mostra risultati
             if videos:
-                filename = save_videos(videos, search_type, search_term, args, logger)
+                filename, s3_success = save_and_upload_videos(videos, search_type, search_term, args, logger)  # ✅ NUOVA
                 print_summary(videos, search_type, search_term, logger)
                 
                 logger.info("🎉 SCRAPING COMPLETATO CON SUCCESSO!")

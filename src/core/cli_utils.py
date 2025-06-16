@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Core CLI Utils - Argparse patterns comuni + PAGINATION + MULTIPLE USERS
-Versione aggiornata con supporto pagination commenti TikTok e multiple users
+Core CLI Utils - Argparse patterns comuni + PAGINATION + MULTIPLE USERS + PARQUET + S3
+Versione aggiornata con supporto pagination, multiple users, Parquet e S3
 """
 
 import os
 import argparse
+import re
+from urllib.parse import urlparse
 
 
 def add_common_arguments(parser):
@@ -28,7 +30,7 @@ def add_common_arguments(parser):
         '--output-dir',
         type=str,
         default='data',
-        help='Directory output per file JSON (default: data/)'
+        help='Directory output per file (default: data/)'
     )
     
     parser.add_argument(
@@ -36,6 +38,34 @@ def add_common_arguments(parser):
         type=str,
         default='',
         help='Prefisso per nome file output'
+    )
+    
+    # ✅ NUOVO: Formato file output
+    parser.add_argument(
+        '--output-format',
+        type=str,
+        choices=['jsonl', 'parquet'],
+        default='jsonl',
+        help='Formato file output: jsonl (human-readable) o parquet (analytics, più veloce) - default: jsonl'
+    )
+    
+    # ✅ NUOVO: S3 Upload
+    parser.add_argument(
+        '--s3-uri',
+        type=str,
+        help='URI S3 per upload automatico (es: s3://mio-bucket/cartella/) - opzionale'
+    )
+    
+    parser.add_argument(
+        '--s3-auto-upload',
+        action='store_true',
+        help='Upload automatico su S3 dopo salvataggio locale (richiede --s3-uri)'
+    )
+    
+    parser.add_argument(
+        '--s3-only',
+        action='store_true',
+        help='Salva SOLO su S3, elimina file locale dopo upload (richiede --s3-uri)'
     )
     
     # Logging e modalità
@@ -160,6 +190,110 @@ def validate_common_arguments(args, parser):
         os.makedirs(args.output_dir, exist_ok=True)
     except Exception as e:
         parser.error(f"❌ Impossibile creare directory {args.output_dir}: {e}")
+    
+    # ✅ NUOVO: Validazione S3
+    args = validate_s3_arguments(args, parser)
+    
+    # ✅ NUOVO: Validazione formato output
+    args = validate_output_format_arguments(args, parser)
+    
+    return args
+
+
+def validate_s3_arguments(args, parser):
+    """
+    ✅ NUOVO: Valida argomenti S3
+    
+    Args:
+        args: Argomenti parsati
+        parser: Parser per errori
+    
+    Returns:
+        args: Argomenti validati
+    """
+    
+    # Validazione S3 URI
+    if args.s3_uri:
+        try:
+            parsed_uri = urlparse(args.s3_uri)
+            
+            # Deve essere formato s3://bucket/path/
+            if parsed_uri.scheme != 's3':
+                parser.error(f"❌ S3 URI deve iniziare con 's3://' (ricevuto: {args.s3_uri})")
+            
+            if not parsed_uri.netloc:
+                parser.error(f"❌ S3 URI deve specificare un bucket (ricevuto: {args.s3_uri})")
+            
+            # Estrai bucket e path
+            args.s3_bucket = parsed_uri.netloc
+            args.s3_path = parsed_uri.path.lstrip('/') if parsed_uri.path else ''
+            
+            # Assicurati che il path termini con / se specificato
+            if args.s3_path and not args.s3_path.endswith('/'):
+                args.s3_path += '/'
+                
+            print(f"✅ S3 configurato: bucket={args.s3_bucket}, path={args.s3_path or '(root)'}")
+            
+        except Exception as e:
+            parser.error(f"❌ Errore parsing S3 URI: {e}")
+    else:
+        args.s3_bucket = None
+        args.s3_path = ''
+    
+    # Validazione dipendenze S3
+    if args.s3_auto_upload and not args.s3_uri:
+        parser.error("❌ --s3-auto-upload richiede --s3-uri")
+    
+    if args.s3_only and not args.s3_uri:
+        parser.error("❌ --s3-only richiede --s3-uri")
+    
+    if args.s3_only and not args.s3_auto_upload:
+        # s3-only implica auto-upload
+        args.s3_auto_upload = True
+    
+    # Check credenziali AWS se S3 richiesto
+    if args.s3_uri:
+        aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+        aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        aws_profile = os.environ.get('AWS_PROFILE')
+        
+        if not aws_access_key and not aws_profile:
+            print("⚠️  ATTENZIONE: Credenziali AWS non trovate nelle variabili d'ambiente")
+            print("💡 Configura una di queste opzioni:")
+            print("   - AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY nel .env")
+            print("   - AWS_PROFILE nel .env") 
+            print("   - aws configure (AWS CLI)")
+            print("   - IAM Role (se su EC2/Lambda)")
+            
+            if not args.auto:
+                confirm = input("Continuare comunque? [y/N]: ").strip().lower()
+                if confirm != 'y':
+                    parser.error("Operazione annullata dall'utente")
+    
+    return args
+
+
+def validate_output_format_arguments(args, parser):
+    """
+    ✅ NUOVO: Valida argomenti formato output
+    
+    Args:
+        args: Argomenti parsati  
+        parser: Parser per errori
+        
+    Returns:
+        args: Argomenti validati
+    """
+    
+    # Check dipendenze per Parquet
+    if args.output_format == 'parquet':
+        try:
+            import pyarrow  # Test import
+            print("✅ PyArrow disponibile per formato Parquet")
+        except ImportError:
+            parser.error("❌ Formato Parquet richiede PyArrow. Installa con: pip install pyarrow")
+    
+    print(f"📁 Formato output: {args.output_format.upper()}")
     
     return args
 
@@ -372,9 +506,18 @@ def print_configuration_summary(args, extra_info=None):
     print("🧪 CONFIGURAZIONE:")
     print(f"   - Count: {args.count}")
     print(f"   - Output: {args.output_dir}/{args.output_prefix}...")
+    print(f"   - Formato: {args.output_format.upper()}")  # ✅ NUOVO
     print(f"   - Log level: {args.log_level}")
     print(f"   - Auto mode: {'SÌ' if args.auto else 'NO'}")
     print(f"   - Filtri contenuto: {'DISATTIVATI' if args.no_filter else 'ATTIVI'}")
+    
+    # ✅ NUOVO: Info S3
+    if args.s3_uri:
+        print(f"   - S3 URI: {args.s3_uri}")
+        print(f"   - S3 Upload: {'AUTO' if args.s3_auto_upload else 'MANUALE'}")
+        print(f"   - S3 Only: {'SÌ' if args.s3_only else 'NO'}")
+    else:
+        print(f"   - S3: DISATTIVATO")
     
     # ✅ NUOVO: Info pagination
     if hasattr(args, 'pagination_mode'):
@@ -396,18 +539,18 @@ def print_configuration_summary(args, extra_info=None):
 
 def setup_tiktok_argparse():
     """
-    ✅ AGGIORNATO: Crea parser TikTok con argomenti comuni + specifici + PAGINATION + MULTIPLE USERS
+    ✅ AGGIORNATO: Crea parser TikTok con argomenti comuni + specifici + PAGINATION + MULTIPLE USERS + PARQUET + S3
     
     Returns:
         ArgumentParser: Parser configurato per TikTok con tutte le features
     """
     
     parser = argparse.ArgumentParser(
-        description='🎵 TikTok Scraper avanzato con PAGINATION, MULTIPLE USERS, rilevanza, commenti e transcript',
+        description='🎵 TikTok Scraper avanzato con PAGINATION, MULTIPLE USERS, PARQUET, S3, rilevanza, commenti e transcript',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    # Argomenti comuni
+    # Argomenti comuni (ora include Parquet + S3)
     add_common_arguments(parser)
     add_content_filter_arguments(parser, default_min_length=10)
     
@@ -564,7 +707,7 @@ def setup_tiktok_argparse():
     
 def validate_tiktok_arguments(args, parser):
     """
-    ✅ AGGIORNATO: Validazioni specifiche TikTok + PAGINATION + MULTIPLE USERS
+    ✅ AGGIORNATO: Validazioni specifiche TikTok + PAGINATION + MULTIPLE USERS + PARQUET + S3
     
     Args:
         args: Argomenti parsati
@@ -656,7 +799,7 @@ def setup_twitter_argparse():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    # Argomenti comuni
+    # Argomenti comuni (ora include Parquet + S3)
     add_common_arguments(parser)
     add_content_filter_arguments(parser, default_min_length=10)
     
